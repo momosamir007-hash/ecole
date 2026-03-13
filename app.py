@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import io
 import re
+import requests
+import json
 from datetime import datetime
 
 # ══════════════════════════════════════════════════════════════
@@ -21,13 +23,26 @@ st.markdown("""
 h1,h2,h3,h4,p,li,span,label,td,th {direction: rtl; text-align: right;}
 .stMetric {direction: ltr;}
 .ai-box { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 15px; padding: 20px; margin: 15px 0; color: white; box-shadow: 0 8px 32px rgba(17,153,142,0.3); }
+.analysis-box { background: #f8f9fa; border-radius: 10px; padding: 20px; border-right: 5px solid #6c5ce7; margin-top: 15px;}
 </style>
 """, unsafe_allow_html=True)
+
+# ══════════════════════════════════════════════════════════════
+# القائمة الجانبية - إعدادات الذكاء الاصطناعي
+# ══════════════════════════════════════════════════════════════
+with st.sidebar:
+    st.header("🤖 إعدادات الذكاء الاصطناعي")
+    st.markdown("أدخل مفتاح **Mistral AI** لتفعيل ميزة التحليل البيداغوجي المتقدم للنتائج.")
+    mistral_api_key = st.text_input("MISTRAL_API_KEY:", type="password", help="احصل على المفتاح من console.mistral.ai")
+    if mistral_api_key:
+        st.success("✅ المفتاح متوفر")
+    else:
+        st.warning("⚠️ يرجى إدخال المفتاح لتفعيل التحليل")
 
 st.markdown("""
 <div class="ai-box">
     <h1 style="color:white; text-align:center;">🏫🤖 النظام الذكي لحساب معدلات التلاميذ</h1>
-    <p style="text-align:center; font-size:16px;"> متوافق كلياً مع مستخرجات الأرضية الرقمية (الرقمنة) | المرحلة الابتدائية </p>
+    <p style="text-align:center; font-size:16px;"> متوافق كلياً مع مستخرجات الأرضية الرقمية (الرقمنة) | مدعوم بالتحليل البيداغوجي لـ Mistral AI </p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -110,7 +125,6 @@ LEVELS = {
 # دوال مساعدة 
 # ══════════════════════════════════════════════════════════════
 def get_expected_sheet_name(level, subject_name):
-    """ دالة ذكية لتحديد اسم الشيت المتوقع بناءً على المستوى والمادة """
     if subject_name == "التربية البدنية":
         return {
             "السنة الأولى": "ت البدنية والرياضية",
@@ -218,6 +232,26 @@ def classify_student(avg):
     if avg >= 3.5: return "ضعيف ⚠️"
     return "ضعيف جداً ❌"
 
+def call_mistral_api(api_key, prompt):
+    url = "https://api.mistral.ai/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+    data = {
+        "model": "mistral-large-latest",
+        "messages": [
+            {"role": "system", "content": "أنت مفتش تربوي جزائري خبير في التعليم الابتدائي. مهمتك تقديم تحليلات دقيقة وتوصيات بيداغوجية لتحسين مستوى التلاميذ بناءً على إحصائيات معدلاتهم."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.5
+    }
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        return response.json()['choices'][0]['message']['content']
+    else:
+        return f"❌ حدث خطأ في الاتصال بالذكاء الاصطناعي: {response.text}"
+
 # ══════════════════════════════════════════════════════════════
 # التطبيق الرئيسي
 # ══════════════════════════════════════════════════════════════
@@ -291,21 +325,18 @@ for teacher, subjects in subjects_by_teacher.items():
         subject_name = subject['name']
         st.markdown(f"#### 📘 {subject_name}")
         
-        # التحديد الذكي للشيت بناءً على التطابق التام
         expected_sheet_name = get_expected_sheet_name(selected_level, subject_name)
         norm_expected = normalize_arabic(expected_sheet_name)
         
         suggested_sheet = 0
         exact_match_found = False
         
-        # 1. البحث بالتطابق التام أولاً (Exact Match)
         for idx, sh in enumerate(sheet_names):
             if normalize_arabic(sh) == norm_expected:
                 suggested_sheet = idx
                 exact_match_found = True
                 break
                 
-        # 2. في حال عدم إيجاد تطابق تام، نبحث عن تطابق جزئي
         if not exact_match_found:
             for idx, sh in enumerate(sheet_names):
                 if norm_expected in normalize_arabic(sh):
@@ -320,7 +351,6 @@ for teacher, subjects in subjects_by_teacher.items():
         )
         
         df_sheet = read_sheet_safe(file, selected_sheet)
-        
         ignore_cols = ['رقم', 'matricule', 'تاريخ', 'date', 'اللقب', 'الاسم', 'nom', 'prenom', 'obs', 'ملاحظات']
         numeric_cols = [c for c in df_sheet.select_dtypes(include='number').columns.tolist() if not any(ign in c.lower() for ign in ignore_cols)]
                         
@@ -328,7 +358,7 @@ for teacher, subjects in subjects_by_teacher.items():
         
         col1, col2 = st.columns(2)
         with col1:
-            if subject['type'] == 'main':  # اللغة العربية والرياضيات فقط
+            if subject['type'] == 'main':
                 default_quizzes = [q for q in quiz_cols if q in numeric_cols]
                 selected_quizzes = st.multiselect(
                     "🧪 أعمدة الفروض المستمرة:",
@@ -343,7 +373,7 @@ for teacher, subjects in subjects_by_teacher.items():
                     default=[],
                     key=f"quizzes_{teacher}_{subject_name}",
                     disabled=True,
-                    help="هذه المادة لا تحتوي على معدل فروض، يتم الاعتماد على عمود النقطة النهائية (الاختبار أو التقويم المستمر) فقط."
+                    help="هذه المادة تعتمد على عمود النقطة النهائية فقط."
                 )
                 
         with col2:
@@ -353,7 +383,7 @@ for teacher, subjects in subjects_by_teacher.items():
                 test_index = numeric_cols.index(test_col) + 1
                 
             selected_test = st.selectbox(
-                "📝 عمود النقطة النهائية (علامة الاختبار / التقويم):",
+                "📝 عمود النقطة النهائية (الاختبار / التقويم):",
                 options=test_options,
                 index=test_index,
                 format_func=lambda x: "يرجى التحديد" if x is None else x,
@@ -394,13 +424,10 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
         df['_key'] = df[name_col].apply(normalize_arabic)
         df['الاسم_الأصلي'] = df[name_col].astype(str)
         
-        # استخراج نقطة الاختبار / التقويم
         test_col = mapping['test_col']
         test_score = df[test_col].apply(clean_grade_value) if test_col and test_col in df.columns else pd.Series(np.nan, index=df.index)
         
-        # تطبيق معادلة الحساب حسب نوع المادة
         if mapping['type'] == 'main':
-            # العربية والرياضيات: (معدل الفروض + الاختبار) / 2
             quiz_cols = mapping['quiz_cols']
             quiz_scores = [df[qcol].apply(clean_grade_value) for qcol in quiz_cols if qcol in df.columns]
             quiz_avg = pd.concat(quiz_scores, axis=1).mean(axis=1, skipna=True) if quiz_scores else pd.Series(np.nan, index=df.index)
@@ -408,7 +435,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
             final_grade = (quiz_avg + test_score) / 2
             final_grade = final_grade.fillna(quiz_avg).fillna(test_score)
         else:
-            # باقي المواد: النقطة مباشرة من الاختبار أو التقويم
             final_grade = test_score
         
         df_subject = df[['_key', 'الاسم_الأصلي']].copy()
@@ -454,6 +480,16 @@ if st.session_state.final_result is not None:
     display_cols = ['الترتيب', 'الاسم'] + st.session_state.subject_cols + ['المجموع', 'المعدل الفصلي', 'التقدير']
     st.dataframe(final_df[display_cols], use_container_width=True, height=450)
     
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("عدد التلاميذ", len(final_df))
+    with col2:
+        st.metric("المعدل العام", round(final_df['المعدل الفصلي'].mean(), 2) if not final_df['المعدل الفصلي'].isna().all() else 0)
+    with col3:
+        st.metric("أعلى معدل", round(final_df['المعدل الفصلي'].max(), 2) if not final_df['المعدل الفصلي'].isna().all() else 0)
+    with col4:
+        st.metric("نسبة النجاح", f"{round((final_df['المعدل الفصلي'] >= 5).mean() * 100, 1)}%")
+    
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         final_df.to_excel(writer, index=False, sheet_name="النتائج")
@@ -464,3 +500,57 @@ if st.session_state.final_result is not None:
         file_name=f"النتائج_النهائية_{selected_level}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
         use_container_width=True
     )
+
+    # ══════════════════════════════════════════════════════════════
+    # الخطوة 5: التحليل الذكي للنتائج (Mistral AI)
+    # ══════════════════════════════════════════════════════════════
+    st.markdown("---")
+    st.subheader("🧠 الخطوة 5: التحليل البيداغوجي المتقدم")
+    
+    if not mistral_api_key:
+        st.info("💡 للقيام بتحليل ذكي معمق للنتائج باستخدام الذكاء الاصطناعي، يرجى إدخال مفتاح `MISTRAL_API_KEY` في القائمة الجانبية.")
+    else:
+        st.write("اضغط على الزر أدناه ليقوم الذكاء الاصطناعي بقراءة معدلات القسم وإعطاء توصيات للأساتذة.")
+        if st.button("✨ توليد التقرير التحليلي", type="secondary"):
+            with st.spinner("🤖 جاري تحليل البيانات واستنباط التوصيات البيداغوجية..."):
+                
+                # تجميع البيانات الإحصائية وإرسالها بدلاً من كل القائمة لحفظ الخصوصية وتقليل حجم الطلب
+                subject_avgs = final_df[st.session_state.subject_cols].mean().round(2).to_dict()
+                class_avg = round(final_df['المعدل الفصلي'].mean(), 2)
+                pass_rate = round((final_df['المعدل الفصلي'] >= 5).mean() * 100, 1)
+                grades_dist = final_df['التقدير'].value_counts().to_dict()
+                
+                summary_data = f"""
+                مستوى القسم: {selected_level}
+                عدد التلاميذ: {len(final_df)}
+                المعدل العام للقسم: {class_avg} / 10
+                نسبة النجاح (المتحصلين على 5 فما فوق): {pass_rate}%
+                
+                معدلات المواد الدراسية (من 10):
+                {json.dumps(subject_avgs, ensure_ascii=False, indent=2)}
+                
+                توزيع التقديرات في القسم:
+                {json.dumps(grades_dist, ensure_ascii=False, indent=2)}
+                """
+                
+                prompt = f"""أنت مفتش تربوي جزائري خبير في مرحلة التعليم الابتدائي.
+                بناءً على الإحصائيات التالية لنتائج الفصل الدراسي، قم بتقديم تقرير مفصل:
+                
+                البيانات:
+                {summary_data}
+                
+                المطلوب:
+                1. قراءة تحليلية عامة لمستوى القسم ونسبة النجاح.
+                2. تحديد دقيق لنقاط القوة (المواد ذات الأداء العالي).
+                3. تحديد دقيق لنقاط الضعف (المواد التي تحتاج تدخلاً عاجلاً).
+                4. تقديم 3 توصيات بيداغوجية عملية وواقعية للأساتذة (معلم القسم وأساتذة التخصص) لمعالجة الضعف في الفصل القادم.
+                
+                يرجى الرد باللغة العربية، بأسلوب احترافي ومهني، واستخدام التنسيق بخط عريض (Markdown) لجعله سهل القراءة.
+                """
+                
+                ai_response = call_mistral_api(mistral_api_key, prompt)
+                
+                st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
+                st.markdown(ai_response)
+                st.markdown('</div>', unsafe_allow_html=True)
+
