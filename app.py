@@ -32,11 +32,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-# تعريف المواد الدراسية (معدلة حسب شروط التقييم الجديدة)
+# تعريف المواد الدراسية 
 # ══════════════════════════════════════════════════════════════
-# العربية والرياضيات (main): لها فروض واختبارات.
-# باقي المواد (secondary): النقطة النهائية تؤخذ مباشرة من (علامة الاختبار / معدل التقويم المستمر).
-
 LEVELS = {
     "السنة الأولى": {
         "total_subjects": 6,
@@ -294,15 +291,26 @@ for teacher, subjects in subjects_by_teacher.items():
         subject_name = subject['name']
         st.markdown(f"#### 📘 {subject_name}")
         
-        # التحديد الذكي للشيت بناءً على القاعدة التي قدمتها
+        # التحديد الذكي للشيت بناءً على التطابق التام
         expected_sheet_name = get_expected_sheet_name(selected_level, subject_name)
         norm_expected = normalize_arabic(expected_sheet_name)
         
         suggested_sheet = 0
+        exact_match_found = False
+        
+        # 1. البحث بالتطابق التام أولاً (Exact Match)
         for idx, sh in enumerate(sheet_names):
-            if norm_expected == normalize_arabic(sh) or normalize_arabic(sh).startswith(norm_expected):
+            if normalize_arabic(sh) == norm_expected:
                 suggested_sheet = idx
+                exact_match_found = True
                 break
+                
+        # 2. في حال عدم إيجاد تطابق تام، نبحث عن تطابق جزئي
+        if not exact_match_found:
+            for idx, sh in enumerate(sheet_names):
+                if norm_expected in normalize_arabic(sh):
+                    suggested_sheet = idx
+                    break
         
         selected_sheet = st.selectbox(
             f"اختر الشيت الخاص بـ {subject_name}:",
@@ -329,7 +337,6 @@ for teacher, subjects in subjects_by_teacher.items():
                     key=f"quizzes_{teacher}_{subject_name}"
                 )
             else:
-                # للمواد الأخرى لا توجد فروض بناءً على ملاحظتك
                 selected_quizzes = st.multiselect(
                     "🧪 أعمدة الفروض:",
                     options=numeric_cols,
@@ -401,7 +408,7 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
             final_grade = (quiz_avg + test_score) / 2
             final_grade = final_grade.fillna(quiz_avg).fillna(test_score)
         else:
-            # باقي المواد (ت البدنية، لغات أجنبية، مواد الحفظ): النقطة مباشرة من الاختبار أو التقويم
+            # باقي المواد: النقطة مباشرة من الاختبار أو التقويم
             final_grade = test_score
         
         df_subject = df[['_key', 'الاسم_الأصلي']].copy()
