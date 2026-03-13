@@ -21,7 +21,6 @@ st.markdown("""
 h1,h2,h3,h4,p,li,span,label,td,th {direction: rtl; text-align: right;}
 .stMetric {direction: ltr;}
 .ai-box { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 15px; padding: 20px; margin: 15px 0; color: white; box-shadow: 0 8px 32px rgba(17,153,142,0.3); }
-.mapping-box { background: #e8f4fd; border-radius: 10px; padding: 15px; margin: 8px 0; border-right: 4px solid #2196F3; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -33,18 +32,21 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-# تعريف المواد الدراسية لكل مستوى (محدثة لتشمل كلمات الرقمنة)
+# تعريف المواد الدراسية (معدلة حسب شروط التقييم الجديدة)
 # ══════════════════════════════════════════════════════════════
+# العربية والرياضيات (main): لها فروض واختبارات.
+# باقي المواد (secondary): النقطة النهائية تؤخذ مباشرة من (علامة الاختبار / معدل التقويم المستمر).
+
 LEVELS = {
     "السنة الأولى": {
         "total_subjects": 6,
         "subjects": [
             {"name": "اللغة العربية", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج"]}},
             {"name": "الرياضيات", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["أعداد", "حساب", "مقادير", "قياس", "معطيات", "فضاء", "هندسة"]}},
-            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}}
+            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}}
         ]
     },
     "السنة الثانية": {
@@ -52,10 +54,10 @@ LEVELS = {
         "subjects": [
             {"name": "اللغة العربية", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج"]}},
             {"name": "الرياضيات", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["أعداد", "حساب", "مقادير", "قياس", "معطيات", "فضاء", "هندسة"]}},
-            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}}
+            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}}
         ]
     },
     "السنة الثالثة": {
@@ -63,14 +65,14 @@ LEVELS = {
         "subjects": [
             {"name": "اللغة العربية", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج"]}},
             {"name": "الرياضيات", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["أعداد", "حساب", "مقادير", "قياس", "معطيات", "فضاء", "هندسة"]}},
-            {"name": "اللغة الفرنسية", "type": "main", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "إنتاج", "قراءة", "تواصل", "كتابي", "شفهي"]}},
-            {"name": "اللغة الإنجليزية", "type": "main", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "إنتاج", "قراءة", "تواصل", "كتابي", "شفهي"]}},
-            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التاريخ", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}}
+            {"name": "اللغة الفرنسية", "type": "secondary", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "اللغة الإنجليزية", "type": "secondary", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التاريخ", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}}
         ]
     },
     "السنة الرابعة": {
@@ -78,15 +80,15 @@ LEVELS = {
         "subjects": [
             {"name": "اللغة العربية", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج"]}},
             {"name": "الرياضيات", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["أعداد", "حساب", "مقادير", "قياس", "معطيات", "فضاء", "هندسة"]}},
-            {"name": "اللغة الفرنسية", "type": "main", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "إنتاج", "قراءة", "تواصل", "كتابي", "شفهي"]}},
-            {"name": "اللغة الإنجليزية", "type": "main", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "إنتاج", "قراءة", "تواصل", "كتابي", "شفهي"]}},
-            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية المدنية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التاريخ والجغرافيا", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}}
+            {"name": "اللغة الفرنسية", "type": "secondary", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "اللغة الإنجليزية", "type": "secondary", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية المدنية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التاريخ والجغرافيا", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}}
         ]
     },
     "السنة الخامسة": {
@@ -94,22 +96,49 @@ LEVELS = {
         "subjects": [
             {"name": "اللغة العربية", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج"]}},
             {"name": "الرياضيات", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["أعداد", "حساب", "مقادير", "قياس", "معطيات", "فضاء", "هندسة"]}},
-            {"name": "اللغة الفرنسية", "type": "main", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "إنتاج", "قراءة", "تواصل", "كتابي", "شفهي"]}},
-            {"name": "اللغة الإنجليزية", "type": "main", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "إنتاج", "قراءة", "تواصل", "كتابي", "شفهي"]}},
-            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية المدنية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التاريخ والجغرافيا", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}},
-            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تقويم", "مستمر"]}}
+            {"name": "اللغة الفرنسية", "type": "secondary", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "اللغة الإنجليزية", "type": "secondary", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية المدنية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التاريخ والجغرافيا", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية التشكيلية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية الموسيقية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "التربية البدنية", "type": "secondary", "teacher": "أستاذ التربية البدنية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}}
         ]
     }
 }
 
 # ══════════════════════════════════════════════════════════════
-# دوال مساعدة (معدلة خصيصاً للرقمنة)
+# دوال مساعدة 
 # ══════════════════════════════════════════════════════════════
+def get_expected_sheet_name(level, subject_name):
+    """ دالة ذكية لتحديد اسم الشيت المتوقع بناءً على المستوى والمادة """
+    if subject_name == "التربية البدنية":
+        return {
+            "السنة الأولى": "ت البدنية والرياضية",
+            "السنة الثانية": "ت البدنية والرياضية 1",
+            "السنة الثالثة": "ت البدنية والرياضية 2",
+            "السنة الرابعة": "ت البدنية والرياضية 3",
+            "السنة الخامسة": "ت البدنية والرياضية 4"
+        }.get(level, "ت البدنية والرياضية")
+        
+    if subject_name == "اللغة الفرنسية":
+        return {
+            "السنة الثالثة": "اللغة الفرنسية",
+            "السنة الرابعة": "اللغة الفرنسية 1",
+            "السنة الخامسة": "اللغة الفرنسية 2"
+        }.get(level, "اللغة الفرنسية")
+        
+    if subject_name == "اللغة الإنجليزية":
+        return {
+            "السنة الثالثة": "اللغة الإنجليزية",
+            "السنة الرابعة": "اللغة الإنجليزية 1",
+            "السنة الخامسة": "اللغة الإنجليزية 2"
+        }.get(level, "اللغة الإنجليزية")
+        
+    return subject_name
+
 def normalize_arabic(text):
     if pd.isna(text): return ""
     text = str(text).strip()
@@ -119,7 +148,6 @@ def normalize_arabic(text):
     return text
 
 def process_names(df):
-    """ دمج اللقب والاسم إذا كانا في عمودين منفصلين (كما في الرقمنة) """
     nom_col, prenom_col = None, None
     for col in df.columns:
         c_norm = str(col).strip().lower()
@@ -134,7 +162,6 @@ def process_names(df):
         c_norm = str(col).strip()
         if any(kw in c_norm for kw in ['اللقب والاسم', 'الاسم واللقب', 'اسم ولقب', 'التلميذ', 'الطالب']):
             return col
-            
     return nom_col or prenom_col
 
 def clean_grade_value(val):
@@ -162,12 +189,9 @@ def detect_subject_columns(df, subject_keywords):
     return quiz_cols, test_col
 
 def read_sheet_safe(file, sheet_name):
-    """ قراءة الملف وتجاوز الترويسة المزدوجة الفرنسية/العربية """
     file.seek(0)
     temp_df = pd.read_excel(file, sheet_name=sheet_name, header=None)
     header_idx = 0
-    
-    # البحث عن صف العناوين (نفضل العناوين العربية)
     for i, row in temp_df.head(15).iterrows():
         row_str = ' '.join(row.dropna().astype(str))
         if 'اللقب' in row_str and 'الاسم' in row_str:
@@ -179,11 +203,8 @@ def read_sheet_safe(file, sheet_name):
     file.seek(0)
     df = pd.read_excel(file, sheet_name=sheet_name, header=header_idx)
     df.columns = df.columns.astype(str).str.replace('\n', ' ').str.strip()
-    
-    # إذا كان الصف الأول بعد العناوين هو أيضاً عناوين بلغة أخرى، يتم حذفه
     if len(df) > 0 and ('اللقب' in str(df.iloc[0].values) or 'الاسم' in str(df.iloc[0].values) or 'رقم' in str(df.iloc[0].values)):
         df = df.iloc[1:].reset_index(drop=True)
-        
     df = df.dropna(how='all')
     return df
 
@@ -201,7 +222,7 @@ def classify_student(avg):
     return "ضعيف جداً ❌"
 
 # ══════════════════════════════════════════════════════════════
-# إدارة حالة الجلسة
+# التطبيق الرئيسي
 # ══════════════════════════════════════════════════════════════
 if 'subject_mappings' not in st.session_state:
     st.session_state.subject_mappings = {}
@@ -212,9 +233,7 @@ if 'uploaded_files' not in st.session_state:
 if 'selected_level' not in st.session_state:
     st.session_state.selected_level = list(LEVELS.keys())[0]
 
-# ══════════════════════════════════════════════════════════════
 # الخطوة 1: اختيار المستوى
-# ══════════════════════════════════════════════════════════════
 st.subheader("📚 الخطوة 1: اختر المستوى الدراسي")
 selected_level = st.selectbox("🎓 المستوى:", list(LEVELS.keys()), index=list(LEVELS.keys()).index(st.session_state.selected_level))
 st.session_state.selected_level = selected_level
@@ -223,8 +242,7 @@ level_config = LEVELS[selected_level]
 st.markdown(f"#### 📋 مواد {selected_level} ({level_config['total_subjects']} مادة)")
 teachers_list = {}
 for subject in level_config['subjects']:
-    t = subject['teacher']
-    teachers_list.setdefault(t, []).append(subject['name'])
+    teachers_list.setdefault(subject['teacher'], []).append(subject['name'])
 
 cols = st.columns(len(teachers_list))
 for i, (teacher, subs) in enumerate(teachers_list.items()):
@@ -233,9 +251,7 @@ for i, (teacher, subs) in enumerate(teachers_list.items()):
         for s in subs:
             st.markdown(f"- {s}")
 
-# ══════════════════════════════════════════════════════════════
-# الخطوة 2: رفع ملفات الأساتذة
-# ══════════════════════════════════════════════════════════════
+# الخطوة 2: رفع الملفات
 st.markdown("---")
 st.subheader("📁 الخطوة 2: رفع ملفات الأساتذة")
 unique_teachers = set([s['teacher'] for s in level_config['subjects']])
@@ -259,11 +275,9 @@ if missing_teachers:
     st.stop()
 st.success("✅ تم رفع جميع الملفات!")
 
-# ══════════════════════════════════════════════════════════════
-# الخطوة 3: ربط المواد بالشيتات والأعمدة
-# ══════════════════════════════════════════════════════════════
+# الخطوة 3: ربط المواد وتحديد الأعمدة
 st.markdown("---")
-st.subheader("🔗 الخطوة 3: ربط المواد بملفات الأساتذة وتحديد الأعمدة")
+st.subheader("🔗 الخطوة 3: إعدادات الأعمدة والشيتات (تلقائي)")
 
 subjects_by_teacher = {}
 for subject in level_config['subjects']:
@@ -272,7 +286,7 @@ for subject in level_config['subjects']:
 subject_mappings = {}
 
 for teacher, subjects in subjects_by_teacher.items():
-    st.markdown(f"### {teacher}")
+    st.markdown(f"### 👨‍🏫 {teacher}")
     file = uploaded_files[teacher]
     sheet_names = get_sheet_names(file)
     
@@ -280,10 +294,13 @@ for teacher, subjects in subjects_by_teacher.items():
         subject_name = subject['name']
         st.markdown(f"#### 📘 {subject_name}")
         
+        # التحديد الذكي للشيت بناءً على القاعدة التي قدمتها
+        expected_sheet_name = get_expected_sheet_name(selected_level, subject_name)
+        norm_expected = normalize_arabic(expected_sheet_name)
+        
         suggested_sheet = 0
-        norm_subj = normalize_arabic(subject_name)
         for idx, sh in enumerate(sheet_names):
-            if norm_subj in normalize_arabic(sh) or normalize_arabic(sh) in norm_subj:
+            if norm_expected == normalize_arabic(sh) or normalize_arabic(sh).startswith(norm_expected):
                 suggested_sheet = idx
                 break
         
@@ -296,22 +313,32 @@ for teacher, subjects in subjects_by_teacher.items():
         
         df_sheet = read_sheet_safe(file, selected_sheet)
         
-        # استبعاد الأعمدة غير المتعلقة بالنقاط
         ignore_cols = ['رقم', 'matricule', 'تاريخ', 'date', 'اللقب', 'الاسم', 'nom', 'prenom', 'obs', 'ملاحظات']
-        numeric_cols = [c for c in df_sheet.select_dtypes(include='number').columns.tolist() 
-                        if not any(ign in c.lower() for ign in ignore_cols)]
+        numeric_cols = [c for c in df_sheet.select_dtypes(include='number').columns.tolist() if not any(ign in c.lower() for ign in ignore_cols)]
                         
         quiz_cols, test_col = detect_subject_columns(df_sheet, subject['keywords'])
         
         col1, col2 = st.columns(2)
         with col1:
-            default_quizzes = quiz_cols if quiz_cols else numeric_cols
-            selected_quizzes = st.multiselect(
-                "🧪 أعمدة الفروض / التقويم:",
-                options=numeric_cols,
-                default=[q for q in default_quizzes if q in numeric_cols],
-                key=f"quizzes_{teacher}_{subject_name}"
-            )
+            if subject['type'] == 'main':  # اللغة العربية والرياضيات فقط
+                default_quizzes = [q for q in quiz_cols if q in numeric_cols]
+                selected_quizzes = st.multiselect(
+                    "🧪 أعمدة الفروض المستمرة:",
+                    options=numeric_cols,
+                    default=default_quizzes,
+                    key=f"quizzes_{teacher}_{subject_name}"
+                )
+            else:
+                # للمواد الأخرى لا توجد فروض بناءً على ملاحظتك
+                selected_quizzes = st.multiselect(
+                    "🧪 أعمدة الفروض:",
+                    options=numeric_cols,
+                    default=[],
+                    key=f"quizzes_{teacher}_{subject_name}",
+                    disabled=True,
+                    help="هذه المادة لا تحتوي على معدل فروض، يتم الاعتماد على عمود النقطة النهائية (الاختبار أو التقويم المستمر) فقط."
+                )
+                
         with col2:
             test_options = [None] + numeric_cols
             test_index = 0
@@ -319,39 +346,29 @@ for teacher, subjects in subjects_by_teacher.items():
                 test_index = numeric_cols.index(test_col) + 1
                 
             selected_test = st.selectbox(
-                "📝 عمود الاختبار (إن وُجد):",
+                "📝 عمود النقطة النهائية (علامة الاختبار / التقويم):",
                 options=test_options,
                 index=test_index,
-                format_func=lambda x: "بدون اختبار (يعتمد على الفروض فقط)" if x is None else x,
+                format_func=lambda x: "يرجى التحديد" if x is None else x,
                 key=f"test_{teacher}_{subject_name}"
             )
         
         subject_mappings[(teacher, subject_name)] = {
             'sheet': selected_sheet,
             'quiz_cols': selected_quizzes,
-            'test_col': selected_test
+            'test_col': selected_test,
+            'type': subject['type']
         }
-        
-        with st.expander(f"👁️ معاينة الشيت ({selected_sheet})"):
-            st.dataframe(df_sheet.head(3), use_container_width=True)
-        
         st.markdown("---")
 
 st.session_state.subject_mappings = subject_mappings
 
-# ══════════════════════════════════════════════════════════════
-# الخطوة 4: الدمج وحساب المعدلات
-# ══════════════════════════════════════════════════════════════
+# الخطوة 4: الحساب والدمج
 st.markdown("---")
 st.subheader("⚙️ الخطوة 4: الدمج وحساب المعدلات")
 
 if st.button("🚀 بدء الحساب", type="primary", use_container_width=True):
     progress = st.progress(0, text="بدء المعالجة...")
-    
-    if "معلم القسم" not in uploaded_files:
-        st.error("❌ لم يتم رفع ملف معلم القسم!")
-        st.stop()
-    
     all_data = [] 
     step = 0
     total_steps = len(subject_mappings)
@@ -361,58 +378,42 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
         progress.progress(int(step / total_steps * 50), text=f"معالجة {subject_name}...")
         
         file = uploaded_files[teacher]
-        sheet = mapping['sheet']
-        quiz_cols = mapping['quiz_cols']
-        test_col = mapping['test_col']
-        
-        df = read_sheet_safe(file, sheet)
-        name_col = process_names(df) # استخدام الدالة الجديدة لدمج الاسم واللقب
+        df = read_sheet_safe(file, mapping['sheet'])
+        name_col = process_names(df)
         
         if name_col is None or name_col not in df.columns:
-            st.warning(f"⚠️ لم يتم العثور على أعمدة الأسماء في شيت {sheet}. سيتم تخطي هذه المادة.")
             continue
         
         df['_key'] = df[name_col].apply(normalize_arabic)
         df['الاسم_الأصلي'] = df[name_col].astype(str)
         
-        quiz_scores = []
-        for qcol in quiz_cols:
-            if qcol in df.columns:
-                quiz_scores.append(df[qcol].apply(clean_grade_value))
-                
-        if quiz_scores:
-            quiz_avg = pd.concat(quiz_scores, axis=1).mean(axis=1, skipna=True)
-        else:
-            quiz_avg = pd.Series(np.nan, index=df.index)
+        # استخراج نقطة الاختبار / التقويم
+        test_col = mapping['test_col']
+        test_score = df[test_col].apply(clean_grade_value) if test_col and test_col in df.columns else pd.Series(np.nan, index=df.index)
         
-        if test_col and test_col in df.columns:
-            test_score = df[test_col].apply(clean_grade_value)
-        else:
-            test_score = pd.Series(np.nan, index=df.index)
-        
-        # حساب المعدل النهائي للمادة بناءً على القاعدة الجزائرية
-        subject_info = next((s for s in level_config['subjects'] if s['name'] == subject_name), None)
-        
-        if subject_info and subject_info['type'] == 'main':
-            # معدل المادة = (معدل التقويم + الاختبار) / 2
+        # تطبيق معادلة الحساب حسب نوع المادة
+        if mapping['type'] == 'main':
+            # العربية والرياضيات: (معدل الفروض + الاختبار) / 2
+            quiz_cols = mapping['quiz_cols']
+            quiz_scores = [df[qcol].apply(clean_grade_value) for qcol in quiz_cols if qcol in df.columns]
+            quiz_avg = pd.concat(quiz_scores, axis=1).mean(axis=1, skipna=True) if quiz_scores else pd.Series(np.nan, index=df.index)
+            
             final_grade = (quiz_avg + test_score) / 2
             final_grade = final_grade.fillna(quiz_avg).fillna(test_score)
         else:
-            # المواد بدون تقويم مستمر، أو المواد التي فيها تقويم مستمر فقط
-            final_grade = test_score if test_col else quiz_avg
+            # باقي المواد (ت البدنية، لغات أجنبية، مواد الحفظ): النقطة مباشرة من الاختبار أو التقويم
+            final_grade = test_score
         
         df_subject = df[['_key', 'الاسم_الأصلي']].copy()
         df_subject[subject_name] = final_grade
-        
         all_data.append(df_subject)
     
     if not all_data:
-        st.error("❌ لم يتم العثور على أي بيانات صحيحة!")
+        st.error("❌ لم يتم العثور على بيانات!")
         st.stop()
     
-    progress.progress(60, text="دمج المواد وتوحيد الأسماء...")
+    progress.progress(60, text="دمج البيانات...")
     
-    # دمج متسلسل (Outer Join) لتفادي فقدان أي تلميذ
     merged = all_data[0]
     for df_sub in all_data[1:]:
         merged = pd.merge(merged, df_sub, on=['_key', 'الاسم_الأصلي'], how='outer')
@@ -420,9 +421,7 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
     merged['الاسم'] = merged['الاسم_الأصلي']
     merged.drop(columns=['الاسم_الأصلي'], inplace=True)
     
-    # أعمدة المواد
     subject_cols = [col for col in merged.columns if col not in ['_key', 'الاسم']]
-    
     for col in subject_cols:
         merged[col] = pd.to_numeric(merged[col], errors='coerce')
     
@@ -435,45 +434,25 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
     merged.insert(0, 'الترتيب', range(1, len(merged) + 1))
     
     progress.progress(100, text="✅ اكتمل الحساب!")
-    
     st.session_state.final_result = merged
     st.session_state.subject_cols = subject_cols
 
-# ══════════════════════════════════════════════════════════════
-# عرض النتائج وتحميلها
-# ══════════════════════════════════════════════════════════════
+# عرض وتحميل النتائج
 if st.session_state.final_result is not None:
     final_df = st.session_state.final_result
-    subject_cols = st.session_state.subject_cols
     
     st.markdown("---")
-    st.subheader("📊 النتائج النهائية (كشف النقاط الإجمالي)")
+    st.subheader("📊 كشف النقاط الإجمالي")
     
-    display_cols = ['الترتيب', 'الاسم'] + subject_cols + ['عدد المواد', 'المجموع', 'المعدل الفصلي', 'التقدير']
-    st.dataframe(final_df[[c for c in display_cols if c in final_df.columns]], use_container_width=True, height=450)
-    
-    st.markdown("#### 📈 إحصائيات القسم")
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("عدد التلاميذ", len(final_df))
-    with col2:
-        st.metric("المعدل العام", round(final_df['المعدل الفصلي'].mean(), 2) if not final_df['المعدل الفصلي'].isna().all() else 0)
-    with col3:
-        st.metric("أعلى معدل", round(final_df['المعدل الفصلي'].max(), 2) if not final_df['المعدل الفصلي'].isna().all() else 0)
-    with col4:
-        st.metric("أدنى معدل", round(final_df['المعدل الفصلي'].min(), 2) if not final_df['المعدل الفصلي'].isna().all() else 0)
+    display_cols = ['الترتيب', 'الاسم'] + st.session_state.subject_cols + ['المجموع', 'المعدل الفصلي', 'التقدير']
+    st.dataframe(final_df[display_cols], use_container_width=True, height=450)
     
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         final_df.to_excel(writer, index=False, sheet_name="النتائج")
-        workbook = writer.book
-        worksheet = writer.sheets["النتائج"]
-        for i, col in enumerate(final_df.columns):
-            max_len = max(final_df[col].astype(str).map(len).max(), len(col)) + 2
-            worksheet.set_column(i, i, min(max_len, 35))
-            
+    
     st.download_button(
-        "📥 تحميل النتائج النهائية بصيغة (Excel)",
+        "📥 تحميل النتائج (Excel)",
         data=output.getvalue(),
         file_name=f"النتائج_النهائية_{selected_level}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
         use_container_width=True
