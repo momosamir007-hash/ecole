@@ -6,6 +6,7 @@ import re
 import requests
 import json
 from datetime import datetime
+import textwrap  # <--- تم إضافة هذه المكتبة لتقطيع النص بشكل صحيح قبل إنشاء PDF
 
 # ══════════════════════════════════════════════════════════════
 # إعدادات الصفحة
@@ -292,7 +293,19 @@ def call_mistral_api(api_key, prompt):
         return f"❌ خطأ في الاتصال: {e}"
 
 def generate_arabic_pdf(text, font_path="arial.ttf"):
-    """ دالة لتوليد ملف PDF داعم للغة العربية """
+    """ دالة لتوليد ملف PDF داعم للغة العربية مع حل مشكلة ترتيب الجمل """
+    import os
+    import urllib.request
+
+    # محاولة تحميل الخط تلقائياً إذا لم يكن موجوداً
+    if not os.path.exists(font_path):
+        try:
+            font_url = "https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf"
+            urllib.request.urlretrieve(font_url, font_path)
+        except Exception as e:
+            st.error(f"❌ لم يتم العثور على الخط ولم نتمكن من تحميله تلقائياً: {e}")
+            return None
+
     try:
         from reportlab.lib.pagesizes import A4
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -302,6 +315,7 @@ def generate_arabic_pdf(text, font_path="arial.ttf"):
         import arabic_reshaper
         from bidi.algorithm import get_display
 
+        # تسجيل الخط
         pdfmetrics.registerFont(TTFont('ArabicFont', font_path))
         
         buffer = io.BytesIO()
@@ -314,21 +328,36 @@ def generate_arabic_pdf(text, font_path="arial.ttf"):
             fontName='ArabicFont',
             fontSize=12,
             leading=18,
-            alignment=2, # محاذاة لليمين
+            alignment=2,  # محاذاة لليمين
         )
         
         story = []
-        for line in text.split('\n'):
-            if line.strip() == '':
+        
+        # تقسيم النص إلى فقرات (حسب الأسطر الفارغة)
+        paragraphs = text.split('\n')
+        for para in paragraphs:
+            if para.strip() == '':
+                # إضافة مسافة بين الفقرات
+                story.append(Spacer(1, 10))
                 continue
-            # إعادة تشكيل الحروف العربية وتصحيح الاتجاه
-            reshaped_text = arabic_reshaper.reshape(line)
-            bidi_text = get_display(reshaped_text)
             
-            p = Paragraph(bidi_text, arabic_style)
-            story.append(p)
+            # تقطيع الفقرة إلى أسطر لا تتجاوز 75 حرفاً (تجنب التقطيع الخاطئ من Reportlab)
+            wrapped_lines = textwrap.wrap(para, width=75)
+            
+            for line in wrapped_lines:
+                # إعادة تشكيل الحروف العربية
+                reshaped = arabic_reshaper.reshape(line)
+                # تطبيق خوارزمية bidi لتصحيح اتجاه النص
+                bidi_text = get_display(reshaped)
+                
+                # إنشاء فقرة PDF من السطر المعالج
+                p = Paragraph(bidi_text, arabic_style)
+                story.append(p)
+            
+            # مسافة بسيطة بعد نهاية الفقرة
             story.append(Spacer(1, 6))
-            
+        
+        # بناء المستند
         doc.build(story)
         buffer.seek(0)
         return buffer.getvalue()
@@ -337,7 +366,7 @@ def generate_arabic_pdf(text, font_path="arial.ttf"):
         st.error("❌ لإنشاء PDF بالعربية، يرجى تثبيت المكتبات: `pip install reportlab arabic-reshaper python-bidi`")
         return None
     except Exception as e:
-        st.error(f"❌ خطأ في توليد PDF (هل تأكدت من إضافة ملف الخط {font_path} في نفس المجلد؟): {e}")
+        st.error(f"❌ خطأ أثناء بناء ملف PDF: {e}")
         return None
 
 # ══════════════════════════════════════════════════════════════
@@ -724,7 +753,7 @@ if st.session_state.final_result is not None:
                     unsafe_allow_html=True
                 )
                 
-                # توليد الـ PDF من النص
+                # توليد الـ PDF من النص باستخدام الدالة المعدلة
                 pdf_bytes = generate_arabic_pdf(ai_response, font_path="arial.ttf")
                 if pdf_bytes:
                     st.download_button(
@@ -733,4 +762,4 @@ if st.session_state.final_result is not None:
                         file_name=f"تقرير_تحليلي_{selected_level}_{datetime.now().strftime('%Y%m%d')}.pdf",
                         mime="application/pdf",
                         use_container_width=True
-                    )
+)
