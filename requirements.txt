@@ -1,5 +1,9 @@
 streamlit
 pandas
-requests
+numpy
 openpyxl
 xlsxwriter
+requests
+reportlab
+arabic-reshaper
+python-bidi
