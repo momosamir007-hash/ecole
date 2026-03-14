@@ -29,20 +29,13 @@ h1,h2,h3,h4,p,li,span,label,td,th {direction: rtl; text-align: right;}
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-# القائمة الجانبية - إعدادات الذكاء الاصطناعي
+# جلب مفتاح الذكاء الاصطناعي من الأسرار (st.secrets) تلقائياً
 # ══════════════════════════════════════════════════════════════
-with st.sidebar:
-    st.header("🤖 إعدادات الذكاء الاصطناعي")
-    st.markdown("أدخل مفتاح **Mistral AI** لتفعيل ميزة التحليل البيداغوجي المتقدم للنتائج.")
-    mistral_api_key = st.text_input(
-        "MISTRAL_API_KEY:",
-        type="password",
-        help="احصل على المفتاح من console.mistral.ai"
-    )
-    if mistral_api_key:
-        st.success("✅ المفتاح متوفر")
-    else:
-        st.warning("⚠️ اختياري — لتفعيل التحليل الذكي")
+try:
+    mistral_api_key = st.secrets["MISTRAL_API_KEY"]
+except KeyError:
+    mistral_api_key = None
+    st.warning("⚠️ المفتاح MISTRAL_API_KEY غير موجود في إعدادات الأسرار (st.secrets).")
 
 st.markdown("""
 <div class="ai-box">
@@ -52,7 +45,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-# تعريف المواد الدراسية لكل مستوى (تم تعديل اللغات الأجنبية إلى main)
+# تعريف المواد الدراسية لكل مستوى
 # ══════════════════════════════════════════════════════════════
 LEVELS = {
     "السنة الأولى": {
@@ -130,7 +123,6 @@ LEVELS = {
 # الدوال المساعدة
 # ══════════════════════════════════════════════════════════════
 def normalize_arabic(text):
-    """توحيد النص العربي لتسهيل المقارنة"""
     if pd.isna(text): return ""
     text = str(text).strip()
     text = re.sub(r'\s+', ' ', text)
@@ -139,7 +131,6 @@ def normalize_arabic(text):
     return text
 
 def get_expected_sheet_name(level, subject_name):
-    """اقتراح اسم الشيت المتوقع حسب المستوى والمادة (للأرضية الرقمية)"""
     mapping = {
         "التربية البدنية": {
             "السنة الأولى": "ت البدنية والرياضية",
@@ -162,10 +153,6 @@ def get_expected_sheet_name(level, subject_name):
     return mapping.get(subject_name, {}).get(level, subject_name)
 
 def process_names(df):
-    """
-    البحث عن عمود الاسم أو إنشاؤه من عمودي اللقب والاسم.
-    الأولوية: عمود مدمج > عمودين منفصلين > أول عمود نصي.
-    """
     nom_col, prenom_col, combined_col = None, None, None
     for col in df.columns:
         c_str = str(col).strip()
@@ -195,7 +182,6 @@ def process_names(df):
     return None
 
 def clean_grade_value(val):
-    """تحويل خلية نقطة إلى رقم مع معالجة (غائب / معفى / الفاصلة)"""
     if pd.isna(val): return np.nan
     s = str(val).strip()
     if any(kw in s for kw in ['غائب', 'غياب', 'معفى', 'معفي', 'مريض']):
@@ -213,7 +199,6 @@ def clean_grade_value(val):
     return np.nan
 
 def get_gradeable_columns(df, name_col=None):
-    """اكتشاف الأعمدة التي تحتوي فعلاً على نقاط قابلة للحساب"""
     ignore_patterns = ['رقم', 'matricule', 'تاريخ', 'date', 'لقب', 'اسم', 'nom', 'prenom', 'obs', 'ملاحظ', 'قرار', 'ترتيب', 'معدل', 'مجموع', 'عدد']
     result = []
     for col in df.columns:
@@ -229,7 +214,6 @@ def get_gradeable_columns(df, name_col=None):
     return result
 
 def detect_subject_columns(df, subject_keywords, gradeable_cols):
-    """يبحث فقط ضمن الأعمدة القابلة للحساب"""
     quiz_cols = []
     test_col = None
     for col in gradeable_cols:
@@ -243,7 +227,6 @@ def detect_subject_columns(df, subject_keywords, gradeable_cols):
     return quiz_cols, test_col
 
 def read_sheet_safe(file, sheet_name):
-    """قراءة ورقة Excel مع الكشف التلقائي عن العناوين وإزالة صفوف العناوين الإضافية المسببة للأخطاء"""
     file.seek(0)
     try:
         temp_df = pd.read_excel(file, sheet_name=sheet_name, header=None, dtype=str)
@@ -255,7 +238,6 @@ def read_sheet_safe(file, sheet_name):
     for i, row in temp_df.head(15).iterrows():
         row_str = ' '.join(row.dropna().astype(str))
         row_norm = normalize_arabic(row_str)
-        # نبحث عن سطر يحتوي على مفاتيح ترويسة حقيقية
         if (('لقب' in row_norm and 'اسم' in row_norm) or ('nom' in row_str.lower() and 'prenom' in row_str.lower())):
             header_idx = i
             break
@@ -265,10 +247,8 @@ def read_sheet_safe(file, sheet_name):
     df.columns = df.columns.astype(str).str.replace('\n', ' ').str.strip()
     df = df.dropna(how='all').reset_index(drop=True)
     
-    # --- المعالجة الجديدة لإزالة التلميذ الوهمي (صف العناوين الثاني) ---
     while len(df) > 0:
         row_str = ' '.join(df.iloc[0].dropna().astype(str)).lower()
-        # إذا كان السطر الأول من البيانات يحتوي على كلمات تدل على أنه عنوان آخر
         if any(h in row_str for h in ['اللقب', 'الاسم', 'لقب', 'اسم', 'رقم التعريف', 'matricule', 'nom', 'prenom']):
             df = df.iloc[1:].reset_index(drop=True)
         else:
@@ -298,9 +278,7 @@ def call_mistral_api(api_key, prompt):
     data = {
         "model": "mistral-large-latest",
         "messages": [
-            {"role": "system", "content": ("أنت مفتش تربوي جزائري خبير في التعليم الابتدائي. "
-                                           "مهمتك تقديم تحليلات دقيقة وتوصيات بيداغوجية "
-                                           "لتحسين مستوى التلاميذ بناءً على إحصائيات معدلاتهم.")},
+            {"role": "system", "content": "أنت مفتش تربوي جزائري خبير في التعليم الابتدائي."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.5
@@ -310,21 +288,65 @@ def call_mistral_api(api_key, prompt):
         if response.status_code == 200:
             return response.json()['choices'][0]['message']['content']
         return f"❌ خطأ {response.status_code}: {response.text}"
-    except requests.exceptions.Timeout:
-        return "❌ انتهت مهلة الاتصال بالخادم. حاول مجدداً."
     except Exception as e:
         return f"❌ خطأ في الاتصال: {e}"
 
+def generate_arabic_pdf(text, font_path="arial.ttf"):
+    """ دالة لتوليد ملف PDF داعم للغة العربية """
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.pdfbase.ttfonts import TTFont
+        from reportlab.pdfbase import pdfmetrics
+        import arabic_reshaper
+        from bidi.algorithm import get_display
+
+        pdfmetrics.registerFont(TTFont('ArabicFont', font_path))
+        
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+        
+        styles = getSampleStyleSheet()
+        arabic_style = ParagraphStyle(
+            'Arabic',
+            parent=styles['Normal'],
+            fontName='ArabicFont',
+            fontSize=12,
+            leading=18,
+            alignment=2, # محاذاة لليمين
+        )
+        
+        story = []
+        for line in text.split('\n'):
+            if line.strip() == '':
+                continue
+            # إعادة تشكيل الحروف العربية وتصحيح الاتجاه
+            reshaped_text = arabic_reshaper.reshape(line)
+            bidi_text = get_display(reshaped_text)
+            
+            p = Paragraph(bidi_text, arabic_style)
+            story.append(p)
+            story.append(Spacer(1, 6))
+            
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
+        
+    except ImportError:
+        st.error("❌ لإنشاء PDF بالعربية، يرجى تثبيت المكتبات: `pip install reportlab arabic-reshaper python-bidi`")
+        return None
+    except Exception as e:
+        st.error(f"❌ خطأ في توليد PDF (هل تأكدت من إضافة ملف الخط {font_path} في نفس المجلد؟): {e}")
+        return None
+
 # ══════════════════════════════════════════════════════════════
-# إدارة حالة الجلسة
+# التطبيق الرئيسي (حالة الجلسة والواجهة)
 # ══════════════════════════════════════════════════════════════
 for key, default in [('subject_mappings', {}), ('final_result', None), ('selected_level', list(LEVELS.keys())[0]), ('subject_cols', [])]:
     if key not in st.session_state:
         st.session_state[key] = default
 
-# ══════════════════════════════════════════════════════════════
-# الخطوة 1: اختيار المستوى الدراسي
-# ══════════════════════════════════════════════════════════════
 st.subheader("📚 الخطوة 1: اختر المستوى الدراسي")
 selected_level = st.selectbox(
     "🎓 المستوى:", list(LEVELS.keys()), index=list(LEVELS.keys()).index(st.session_state.selected_level)
@@ -344,9 +366,6 @@ for i, (teacher, subs) in enumerate(teachers_list.items()):
         for s in subs:
             st.markdown(f"- {s}")
 
-# ══════════════════════════════════════════════════════════════
-# الخطوة 2: رفع ملفات الأساتذة
-# ══════════════════════════════════════════════════════════════
 st.markdown("---")
 st.subheader("📁 الخطوة 2: رفع ملفات الأساتذة")
 
@@ -370,9 +389,6 @@ if missing_teachers:
     st.stop()
 st.success("✅ تم رفع جميع الملفات!")
 
-# ══════════════════════════════════════════════════════════════
-# الخطوة 3: ربط المواد بالشيتات والأعمدة
-# ══════════════════════════════════════════════════════════════
 st.markdown("---")
 st.subheader("🔗 الخطوة 3: إعدادات الأعمدة والشيتات")
 
@@ -474,9 +490,6 @@ for teacher, subjects in subjects_by_teacher.items():
 
 st.session_state.subject_mappings = subject_mappings
 
-# ══════════════════════════════════════════════════════════════
-# الخطوة 4: الدمج وحساب المعدلات
-# ══════════════════════════════════════════════════════════════
 st.markdown("---")
 st.subheader("⚙️ الخطوة 4: الدمج وحساب المعدلات")
 
@@ -525,7 +538,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
         test_score = (df[test_col].apply(clean_grade_value) if test_col and test_col in df.columns else pd.Series(np.nan, index=df.index))
         
         if mapping['type'] == 'main' and mapping['quiz_cols']:
-            # مادة أساسية (فيها فروض): معدل = (معدل الفروض + الاختبار) / 2
             quiz_scores = [df[qc].apply(clean_grade_value) for qc in mapping['quiz_cols'] if qc in df.columns]
             if quiz_scores:
                 quiz_avg = pd.concat(quiz_scores, axis=1).mean(axis=1, skipna=True)
@@ -543,7 +555,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
                 f"فروض={len(quiz_scores)} أعمدة + اختبار → معدل المادة"
             )
         else:
-            # مادة ثانوية: النقطة النهائية مباشرة
             final_grade = test_score
             computation_log.append(f"✅ {subject_name} (ثانوية): نقطة واحدة مباشرة")
             
@@ -619,9 +630,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
     st.session_state.final_result = merged
     st.session_state.subject_cols = subject_col_names
 
-# ══════════════════════════════════════════════════════════════
-# عرض النتائج وتحميلها
-# ══════════════════════════════════════════════════════════════
 if st.session_state.final_result is not None:
     final_df = st.session_state.final_result
     subject_cols = st.session_state.subject_cols
@@ -668,15 +676,15 @@ if st.session_state.final_result is not None:
     )
 
     # ══════════════════════════════════════════════════════════
-    # الخطوة 5: التحليل البيداغوجي بالذكاء الاصطناعي
+    # الخطوة 5: التحليل البيداغوجي بالذكاء الاصطناعي مع تحميل PDF
     # ══════════════════════════════════════════════════════════
     st.markdown("---")
     st.subheader("🧠 الخطوة 5: التحليل البيداغوجي المتقدم")
     
     if not mistral_api_key:
-        st.info("💡 أدخل مفتاح Mistral API في القائمة الجانبية " "لتفعيل التحليل الذكي للنتائج.")
+        st.info("💡 للقيام بالتحليل الذكي، يرجى إعداد مفتاح Mistral API في ملف .streamlit/secrets.toml")
     else:
-        st.write("اضغط على الزر ليقوم الذكاء الاصطناعي بتحليل النتائج " "وإعطاء توصيات بيداغوجية.")
+        st.write("اضغط على الزر ليقوم الذكاء الاصطناعي بتحليل النتائج وإعطاء توصيات بيداغوجية.")
         if st.button("✨ توليد التقرير التحليلي", type="secondary"):
             with st.spinner("🤖 جاري التحليل..."):
                 subject_avgs = (final_df[subject_cols]
@@ -688,14 +696,13 @@ if st.session_state.final_result is not None:
                 grades_dist = (final_df['التقدير']
                                .value_counts().to_dict())
                                
-                prompt = f"""أنت مفتش تربوي جزائري خبير في مرحلة التعليم الابتدائي.
-                بناءً على الإحصائيات التالية لنتائج الفصل الدراسي، قم بتقديم تقرير مفصل:
+                prompt = f"""بناءً على الإحصائيات التالية لنتائج الفصل الدراسي، قم بتقديم تقرير مفصل:
                 
                 **البيانات:**
                 - المستوى: {selected_level}
                 - عدد التلاميذ: {len(final_df)}
                 - المعدل العام للقسم: {class_avg} / 10
-                - نسبة النجاح (≥ 5): {pass_r}%
+                - نسبة النجاح (المعدل 5 فما فوق): {pass_r}%
                 
                 معدلات المواد (من 10):
                 {json.dumps(subject_avgs, ensure_ascii=False, indent=2)}
@@ -708,7 +715,7 @@ if st.session_state.final_result is not None:
                 2. تحديد نقاط القوة (المواد ذات الأداء العالي).
                 3. تحديد نقاط الضعف (المواد التي تحتاج تدخلاً).
                 4. تقديم 3 توصيات بيداغوجية عملية وواقعية.
-                الرد باللغة العربية بأسلوب احترافي مع تنسيق Markdown."""
+                الرد يجب أن يكون باللغة العربية كنص عادي وواضح (بدون تنسيقات Markdown مثل النجوم المزدوجة) ليتم تحويله إلى PDF بسلاسة."""
                 
                 ai_response = call_mistral_api(mistral_api_key, prompt)
                 
@@ -716,4 +723,14 @@ if st.session_state.final_result is not None:
                     f'<div class="analysis-box">{ai_response}</div>',
                     unsafe_allow_html=True
                 )
-
+                
+                # توليد الـ PDF من النص
+                pdf_bytes = generate_arabic_pdf(ai_response, font_path="arial.ttf")
+                if pdf_bytes:
+                    st.download_button(
+                        label="📥 تحميل التقرير (PDF)",
+                        data=pdf_bytes,
+                        file_name=f"تقرير_تحليلي_{selected_level}_{datetime.now().strftime('%Y%m%d')}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
