@@ -52,7 +52,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-# تعريف المواد الدراسية لكل مستوى
+# تعريف المواد الدراسية لكل مستوى (تم تعديل اللغات الأجنبية إلى main)
 # ══════════════════════════════════════════════════════════════
 LEVELS = {
     "السنة الأولى": {
@@ -82,8 +82,8 @@ LEVELS = {
         "subjects": [
             {"name": "اللغة العربية", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج"]}},
             {"name": "الرياضيات", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["أعداد", "حساب", "مقادير", "قياس", "معطيات", "فضاء", "هندسة"]}},
-            {"name": "اللغة الفرنسية", "type": "secondary", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
-            {"name": "اللغة الإنجليزية", "type": "secondary", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "اللغة الفرنسية", "type": "main", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج", "فهم"]}},
+            {"name": "اللغة الإنجليزية", "type": "main", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج", "فهم"]}},
             {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
             {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
             {"name": "التاريخ", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
@@ -97,8 +97,8 @@ LEVELS = {
         "subjects": [
             {"name": "اللغة العربية", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج"]}},
             {"name": "الرياضيات", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["أعداد", "حساب", "مقادير", "قياس", "معطيات", "فضاء", "هندسة"]}},
-            {"name": "اللغة الفرنسية", "type": "secondary", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
-            {"name": "اللغة الإنجليزية", "type": "secondary", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "اللغة الفرنسية", "type": "main", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج", "فهم"]}},
+            {"name": "اللغة الإنجليزية", "type": "main", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج", "فهم"]}},
             {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
             {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
             {"name": "التربية المدنية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
@@ -113,8 +113,8 @@ LEVELS = {
         "subjects": [
             {"name": "اللغة العربية", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج"]}},
             {"name": "الرياضيات", "type": "main", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["أعداد", "حساب", "مقادير", "قياس", "معطيات", "فضاء", "هندسة"]}},
-            {"name": "اللغة الفرنسية", "type": "secondary", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
-            {"name": "اللغة الإنجليزية", "type": "secondary", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
+            {"name": "اللغة الفرنسية", "type": "main", "teacher": "أستاذ اللغة الفرنسية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج", "فهم"]}},
+            {"name": "اللغة الإنجليزية", "type": "main", "teacher": "أستاذ اللغة الإنجليزية", "keywords": {"tests": ["اختبار", "امتحان"], "quizzes": ["تعبير", "تواصل", "قراءة", "محفوظات", "كتابة", "املاء", "إنتاج", "فهم"]}},
             {"name": "التربية الإسلامية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
             {"name": "التربية العلمية والتكنولوجية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
             {"name": "التربية المدنية", "type": "secondary", "teacher": "معلم القسم", "keywords": {"tests": ["اختبار", "امتحان", "تقويم", "مستمر"], "quizzes": []}},
@@ -127,7 +127,7 @@ LEVELS = {
 }
 
 # ══════════════════════════════════════════════════════════════
-# الدوال المساعدة (مُصحَّحة)
+# الدوال المساعدة
 # ══════════════════════════════════════════════════════════════
 def normalize_arabic(text):
     """توحيد النص العربي لتسهيل المقارنة"""
@@ -161,7 +161,6 @@ def get_expected_sheet_name(level, subject_name):
     }
     return mapping.get(subject_name, {}).get(level, subject_name)
 
-# ── إصلاح #3: دالة أكثر أماناً لاكتشاف عمود الاسم ──
 def process_names(df):
     """
     البحث عن عمود الاسم أو إنشاؤه من عمودي اللقب والاسم.
@@ -171,13 +170,10 @@ def process_names(df):
     for col in df.columns:
         c_str = str(col).strip()
         c_norm = normalize_arabic(c_str)
-        # 1) البحث عن عمود مدمج أولاً (أعلى أولوية)
         if any(kw in c_norm for kw in ['لقب والاسم', 'اسم واللقب', 'اسم ولقب', 'لقب واسم', 'التلميذ', 'الطالب']):
             combined_col = col
-        # 2) عمود اللقب
         elif c_norm in ['اللقب', 'لقب'] or c_str.lower() == 'nom':
             nom_col = col
-        # 3) عمود الاسم
         elif c_norm in ['الاسم', 'اسم'] or c_str.lower() in ['prenom', 'prénom']:
             prenom_col = col
 
@@ -191,7 +187,6 @@ def process_names(df):
     if prenom_col:
         return prenom_col
 
-    # احتياطي: أول عمود نصي ليس رقمياً/تقنياً
     skip_kw = ['رقم', 'ملاحظ', 'تاريخ', 'قرار', 'ترتيب', 'معدل', 'مجموع', '#', 'num', 'id']
     for col in df.columns:
         if df[col].dtype == 'object' and df[col].notna().sum() > 0:
@@ -212,16 +207,13 @@ def clean_grade_value(val):
     if match:
         try:
             v = float(match.group(1))
-            return v if v <= 20 else np.nan  # حاجز أمان
+            return v if v <= 20 else np.nan
         except ValueError:
             return np.nan
     return np.nan
 
-# ── إصلاح #7: اكتشاف الأعمدة الرقمية بعد التنظيف ──
 def get_gradeable_columns(df, name_col=None):
-    """
-    اكتشاف الأعمدة التي تحتوي فعلاً على نقاط قابلة للحساب (بعد تنظيف القيم النصية مثل 'غائب')
-    """
+    """اكتشاف الأعمدة التي تحتوي فعلاً على نقاط قابلة للحساب"""
     ignore_patterns = ['رقم', 'matricule', 'تاريخ', 'date', 'لقب', 'اسم', 'nom', 'prenom', 'obs', 'ملاحظ', 'قرار', 'ترتيب', 'معدل', 'مجموع', 'عدد']
     result = []
     for col in df.columns:
@@ -230,18 +222,14 @@ def get_gradeable_columns(df, name_col=None):
         col_norm = normalize_arabic(str(col)).lower()
         if any(ign in col_norm for ign in ignore_patterns):
             continue
-        # نُنظّف ثم نتحقق
         cleaned = df[col].apply(clean_grade_value)
         valid_count = cleaned.notna().sum()
         if valid_count >= max(1, len(df) * 0.1):
             result.append(col)
     return result
 
-# ── إصلاح #5: اكتشاف أعمدة الفروض والاختبار بشكل أدق ──
 def detect_subject_columns(df, subject_keywords, gradeable_cols):
-    """
-    يبحث فقط ضمن الأعمدة القابلة للحساب (gradeable_cols) ويعيد أول عمود اختبار (وليس آخر عمود).
-    """
+    """يبحث فقط ضمن الأعمدة القابلة للحساب"""
     quiz_cols = []
     test_col = None
     for col in gradeable_cols:
@@ -250,13 +238,12 @@ def detect_subject_columns(df, subject_keywords, gradeable_cols):
         is_quiz = any(normalize_arabic(kw) in col_norm for kw in subject_keywords.get('quizzes', []))
         if is_quiz:
             quiz_cols.append(col)
-        elif is_test and test_col is None:  # ← نحتفظ بأول عمود اختبار
+        elif is_test and test_col is None:
             test_col = col
     return quiz_cols, test_col
 
-# ── إصلاح #3: قراءة الشيت بدون حذف أسطر بيانات ──
 def read_sheet_safe(file, sheet_name):
-    """قراءة ورقة Excel مع الكشف التلقائي عن سطر العناوين"""
+    """قراءة ورقة Excel مع الكشف التلقائي عن العناوين وإزالة صفوف العناوين الإضافية المسببة للأخطاء"""
     file.seek(0)
     try:
         temp_df = pd.read_excel(file, sheet_name=sheet_name, header=None, dtype=str)
@@ -277,6 +264,16 @@ def read_sheet_safe(file, sheet_name):
     df = pd.read_excel(file, sheet_name=sheet_name, header=header_idx)
     df.columns = df.columns.astype(str).str.replace('\n', ' ').str.strip()
     df = df.dropna(how='all').reset_index(drop=True)
+    
+    # --- المعالجة الجديدة لإزالة التلميذ الوهمي (صف العناوين الثاني) ---
+    while len(df) > 0:
+        row_str = ' '.join(df.iloc[0].dropna().astype(str)).lower()
+        # إذا كان السطر الأول من البيانات يحتوي على كلمات تدل على أنه عنوان آخر
+        if any(h in row_str for h in ['اللقب', 'الاسم', 'لقب', 'اسم', 'رقم التعريف', 'matricule', 'nom', 'prenom']):
+            df = df.iloc[1:].reset_index(drop=True)
+        else:
+            break
+            
     return df
 
 def get_sheet_names(file):
@@ -292,7 +289,6 @@ def classify_student(avg):
     if avg >= 3.5: return "ضعيف ⚠️"
     return "ضعيف جداً ❌"
 
-# ── إصلاح #6: إضافة timeout لطلب API ──
 def call_mistral_api(api_key, prompt):
     url = "https://api.mistral.ai/v1/chat/completions"
     headers = {
@@ -354,7 +350,6 @@ for i, (teacher, subs) in enumerate(teachers_list.items()):
 st.markdown("---")
 st.subheader("📁 الخطوة 2: رفع ملفات الأساتذة")
 
-# ── إصلاح #4: استخدام قائمة مرتبة بدلاً من set ──
 unique_teachers = list(dict.fromkeys(s['teacher'] for s in level_config['subjects']))
 uploaded_files = {}
 
@@ -396,7 +391,6 @@ for teacher, subjects in subjects_by_teacher.items():
         subject_name = subject['name']
         st.markdown(f"#### 📘 {subject_name}")
         
-        # اقتراح ذكي لاسم الشيت
         expected = get_expected_sheet_name(selected_level, subject_name)
         norm_expected = normalize_arabic(expected)
         
@@ -430,7 +424,6 @@ for teacher, subjects in subjects_by_teacher.items():
             }
             continue
             
-        # اكتشاف الأعمدة القابلة للحساب (بعد التنظيف)
         local_name_col = process_names(df_sheet)
         gradeable_cols = get_gradeable_columns(df_sheet, local_name_col)
         
@@ -458,7 +451,6 @@ for teacher, subjects in subjects_by_teacher.items():
             if test_col_detected and test_col_detected in gradeable_cols:
                 test_index = gradeable_cols.index(test_col_detected) + 1
             elif gradeable_cols:
-                # افتراضياً: آخر عمود رقمي (عادةً يكون الاختبار)
                 test_index = len(gradeable_cols)
                 
             selected_test_raw = st.selectbox(
@@ -483,7 +475,7 @@ for teacher, subjects in subjects_by_teacher.items():
 st.session_state.subject_mappings = subject_mappings
 
 # ══════════════════════════════════════════════════════════════
-# الخطوة 4: الدمج وحساب المعدلات (الإصلاح الجوهري)
+# الخطوة 4: الدمج وحساب المعدلات
 # ══════════════════════════════════════════════════════════════
 st.markdown("---")
 st.subheader("⚙️ الخطوة 4: الدمج وحساب المعدلات")
@@ -491,10 +483,9 @@ st.subheader("⚙️ الخطوة 4: الدمج وحساب المعدلات")
 if st.button("🚀 بدء الحساب", type="primary", use_container_width=True):
     progress = st.progress(0, text="بدء المعالجة...")
     
-    # ── المرحلة 1: حساب نقطة كل مادة لكل تلميذ ──
-    subject_grades = {}  # subject_name → DataFrame(_key, grade)
-    master_names = None  # DataFrame(_key, الاسم) من ملف معلم القسم
-    computation_log = [] # سجل العمليات للعرض
+    subject_grades = {}
+    master_names = None
+    computation_log = []
     
     step = 0
     total_steps = len(subject_mappings)
@@ -519,25 +510,22 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
             
         df['_key'] = df[name_col].apply(normalize_arabic)
         
-        # ── بناء القائمة المرجعية من ملف معلم القسم ──
         if teacher == "معلم القسم" and master_names is None:
             master_names = (df[['_key', name_col]]
                             .rename(columns={name_col: 'الاسم'})
                             .drop_duplicates('_key')
                             .reset_index(drop=True))
         elif master_names is None:
-            # احتياطي: إذا لم يُعالَج معلم القسم بعد
             master_names = (df[['_key', name_col]]
                             .rename(columns={name_col: 'الاسم'})
                             .drop_duplicates('_key')
                             .reset_index(drop=True))
                             
-        # ── حساب النقطة النهائية للمادة ──
         test_col = mapping['test_col']
         test_score = (df[test_col].apply(clean_grade_value) if test_col and test_col in df.columns else pd.Series(np.nan, index=df.index))
         
         if mapping['type'] == 'main' and mapping['quiz_cols']:
-            # مادة أساسية: معدل = (معدل الفروض + الاختبار) / 2
+            # مادة أساسية (فيها فروض): معدل = (معدل الفروض + الاختبار) / 2
             quiz_scores = [df[qc].apply(clean_grade_value) for qc in mapping['quiz_cols'] if qc in df.columns]
             if quiz_scores:
                 quiz_avg = pd.concat(quiz_scores, axis=1).mean(axis=1, skipna=True)
@@ -548,7 +536,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
             final_grade = pd.Series(np.nan, index=df.index)
             final_grade[both_ok] = ((quiz_avg[both_ok] + test_score[both_ok]) / 2)
             
-            # احتياطي: إذا توفر جزء واحد فقط
             final_grade = final_grade.fillna(quiz_avg).fillna(test_score)
             
             computation_log.append(
@@ -560,7 +547,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
             final_grade = test_score
             computation_log.append(f"✅ {subject_name} (ثانوية): نقطة واحدة مباشرة")
             
-        # ── إصلاح #1 و #2: نخزن فقط _key + النقطة ──
         sg = pd.DataFrame({
             '_key': df['_key'],
             subject_name: final_grade
@@ -568,7 +554,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
         
         subject_grades[subject_name] = sg
         
-    # ── التحقق ──
     if not subject_grades:
         st.error("❌ لم يتم حساب أي مادة!")
         st.stop()
@@ -577,23 +562,20 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
         st.error("❌ لم يتم العثور على قائمة أسماء التلاميذ!")
         st.stop()
         
-    # ── عرض سجل العمليات ──
     with st.expander("📋 سجل العمليات"):
         for log in computation_log:
             st.write(log)
             
-    # ── المرحلة 2: الدمج على _key فقط ──
     progress.progress(60, text="دمج البيانات...")
     merged = master_names.copy()
     
     for subj_name, sg_df in subject_grades.items():
         merged = pd.merge(
-            merged, sg_df[['_key', subj_name]],  # فقط المفتاح + النقطة
+            merged, sg_df[['_key', subj_name]],
             on='_key',
             how='left'
         )
         
-    # إضافة التلاميذ الموجودين في ملفات أخرى وغير موجودين عند معلم القسم
     all_extra_keys = set()
     for subj_name, sg_df in subject_grades.items():
         all_extra_keys.update(sg_df['_key'].tolist())
@@ -601,14 +583,9 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
     missing_keys = all_extra_keys - set(merged['_key'].tolist())
     
     if missing_keys:
-        # محاولة جلب أسماء هؤلاء التلاميذ من أي ملف متوفر
         extra_rows = []
         for mk in missing_keys:
-            name_found = mk  # افتراضي
-            for subj_name, sg_df in subject_grades.items():
-                # نعود للملف الأصلي للبحث عن الاسم الحقيقي
-                pass  # الاسم المعياري يكفي كاحتياطي
-                
+            name_found = mk
             row = {'_key': mk, 'الاسم': mk}
             for subj_name, sg_df in subject_grades.items():
                 match = sg_df[sg_df['_key'] == mk]
@@ -619,7 +596,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
             extra_df = pd.DataFrame(extra_rows)
             merged = pd.concat([merged, extra_df], ignore_index=True)
             
-    # ── المرحلة 3: الحسابات النهائية ──
     progress.progress(80, text="حساب المعدلات...")
     subject_col_names = list(subject_grades.keys())
     
@@ -633,7 +609,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
     ).round(2)
     merged['التقدير'] = merged['المعدل الفصلي'].apply(classify_student)
     
-    # الترتيب
     merged = (merged
               .sort_values('المعدل الفصلي', ascending=False)
               .reset_index(drop=True))
@@ -659,7 +634,6 @@ if st.session_state.final_result is not None:
     
     st.dataframe(final_df[display_cols], use_container_width=True, height=450)
     
-    # ── إحصائيات ──
     col1, col2, col3, col4 = st.columns(4)
     avg_val = final_df['المعدل الفصلي'].mean()
     max_val = final_df['المعدل الفصلي'].max()
@@ -675,7 +649,6 @@ if st.session_state.final_result is not None:
     with col4:
         st.metric("نسبة النجاح", f"{round(pass_rate, 1)}%" if pd.notna(pass_rate) else "0%")
         
-    # ── تحميل Excel ──
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         export_df = final_df[display_cols]
@@ -743,3 +716,4 @@ if st.session_state.final_result is not None:
                     f'<div class="analysis-box">{ai_response}</div>',
                     unsafe_allow_html=True
                 )
+
