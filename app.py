@@ -149,6 +149,15 @@ def get_expected_sheet_name(level, subject_name):
             "السنة الثالثة": "اللغة الإنجليزية",
             "السنة الرابعة": "اللغة الإنجليزية 1",
             "السنة الخامسة": "اللغة الإنجليزية 2"
+        },
+        "التربية العلمية والتكنولوجية": {
+            "السنة الثالثة": "ت العلمية و التكنولوجية",
+            "السنة الرابعة": "ت العلمية و التكنولوجية",
+            "السنة الخامسة": "ت العلمية و التكنولوجية"
+        },
+        "التاريخ والجغرافيا": {
+            "السنة الرابعة": "التاريخ و الجغرافيا",
+            "السنة الخامسة": "التاريخ و الجغرافيا"
         }
     }
     return mapping.get(subject_name, {}).get(level, subject_name)
@@ -762,4 +771,4 @@ if st.session_state.final_result is not None:
                         file_name=f"تقرير_تحليلي_{selected_level}_{datetime.now().strftime('%Y%m%d')}.pdf",
                         mime="application/pdf",
                         use_container_width=True
-)
+                    )
