@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,7 +10,7 @@ from datetime import datetime
 import textwrap
 import zipfile
 import os
-from collections import Counter  # <--- تم إضافة هذه المكتبة لتقطيع النص بشكل صحيح قبل إنشاء PDF
+from collections import Counter
 
 # ══════════════════════════════════════════════════════════════
 # إعدادات الصفحة
@@ -33,17 +34,22 @@ h1,h2,h3,h4,p,li,span,label,td,th {direction: rtl; text-align: right;}
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-# جلب مفتاح الذكاء الاصطناعي من الأسرار (st.secrets) تلقائياً
+# مفاتيح مزودي الذكاء الاصطناعي
 # ══════════════════════════════════════════════════════════════
-try:
-    mistral_api_key = st.secrets["MISTRAL_API_KEY"]
-except Exception:
-    mistral_api_key = None
+def get_secret(name):
+    """الحصول الآمن على مفتاح من Streamlit Secrets"""
+    try:
+        return st.secrets[name]
+    except Exception:
+        return None
+
+MISTRAL_API_KEY = get_secret("MISTRAL_API_KEY")
+OPENROUTER_API_KEY = get_secret("OPENROUTER_API_KEY")
 
 st.markdown("""
 <div class="ai-box">
     <h1 style="color:white; text-align:center;">🏫🤖 النظام الذكي لحساب معدلات التلاميذ</h1>
-    <p style="text-align:center; font-size:16px;"> متوافق كلياً مع مستخرجات الأرضية الرقمية (الرقمنة) | مدعوم بالتحليل البيداغوجي لـ Mistral AI </p>
+    <p style="text-align:center; font-size:16px;"> متوافق كلياً مع مستخرجات الأرضية الرقمية (الرقمنة) | مدعوم بالتحليل البيداغوجي الذكي متعدد المزودين </p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -165,7 +171,6 @@ def get_expected_sheet_name(level, subject_name):
     return mapping.get(subject_name, {}).get(level, subject_name)
 
 def find_student_id_column(df):
-    """البحث عن رقم تعريف ثابت، وهو أدق من مطابقة الأسماء عند الدمج."""
     candidates = ['matricule', 'رقم التعريف', 'رقم_التعريف', 'رقم التسجيل', 'id']
     for col in df.columns:
         norm = normalize_arabic(str(col)).lower()
@@ -222,7 +227,6 @@ def clean_grade_value(val):
     return np.nan
 
 def is_final_assessment_column(column_name):
-    """التعرف على أسماء النقطة النهائية في مستخرجات الرقمنة المختلفة."""
     c = normalize_arabic(str(column_name)).lower()
     aliases = [
         'اختبار', 'امتحان', 'تقويم مستمر', 'معدل التقويم المستمر',
@@ -231,9 +235,7 @@ def is_final_assessment_column(column_name):
     ]
     return any(normalize_arabic(alias) in c for alias in aliases)
 
-
 def get_gradeable_columns(df, name_col=None):
-    # لا نستبعد كلمة «معدل» إذا كانت جزءاً من اسم النقطة النهائية مثل «معدل التقويم المستمر».
     ignore_patterns = ['رقم', 'matricule', 'تاريخ', 'date', 'لقب', 'اسم', 'nom', 'prenom', 'obs', 'ملاحظ', 'قرار', 'ترتيب', 'مجموع', 'عدد']
     result = []
     for col in df.columns:
@@ -250,13 +252,11 @@ def get_gradeable_columns(df, name_col=None):
             result.append(col)
     return result
 
-
 def detect_subject_columns(df, subject_keywords, gradeable_cols):
     quiz_cols = []
     test_candidates = []
     for col in gradeable_cols:
         col_norm = normalize_arabic(str(col))
-        # أعط أولوية صريحة للأسماء الشائعة للنقطة النهائية.
         if is_final_assessment_column(col):
             test_candidates.append(col)
             continue
@@ -266,7 +266,6 @@ def detect_subject_columns(df, subject_keywords, gradeable_cols):
             test_candidates.append(col)
         elif is_quiz:
             quiz_cols.append(col)
-    # إذا كان هناك أكثر من مرشح، نفضل «معدل التقويم المستمر» ثم «اختبار».
     def priority(col):
         c = normalize_arabic(str(col))
         if 'معدل التقويم المستمر' in c: return 0
@@ -278,7 +277,6 @@ def detect_subject_columns(df, subject_keywords, gradeable_cols):
     return quiz_cols, test_col
 
 def mapping_confidence(subject, quiz_cols, test_col, gradeable_cols):
-    """درجة ثقة بسيطة وشفافة للاكتشاف التلقائي."""
     score = 0
     reasons = []
     if test_col:
@@ -299,7 +297,6 @@ def mapping_confidence(subject, quiz_cols, test_col, gradeable_cols):
     return min(score, 100), reasons
 
 def make_descriptive_headers(raw, header_idx):
-    """إنشاء أسماء أعمدة مفهومة، خصوصاً عندما تكون عناوين Excel أرقاماً فقط."""
     current = raw.iloc[header_idx].fillna('').astype(str).tolist()
     previous = raw.iloc[header_idx - 1].fillna('').astype(str).tolist() if header_idx > 0 else [''] * len(current)
     generic_counter = 0
@@ -309,14 +306,12 @@ def make_descriptive_headers(raw, header_idx):
         prev = re.sub(r'\s+', ' ', str(previous[idx])).strip() if idx < len(previous) else ''
         is_numeric_header = bool(re.fullmatch(r'\d+(?:\.0+)?', value)) or value.lower().startswith('unnamed') or not value
         if is_numeric_header:
-            # في كثير من كشوف النقاط تكون المهارة مكتوبة في الصف السابق والرقم في صف العنوان.
             if prev and not re.fullmatch(r'\d+(?:\.0+)?', prev):
                 value = prev
             else:
                 generic_counter += 1
                 value = f'تقييم {generic_counter}'
         headers.append(value)
-    # إزالة التكرار مع الإبقاء على الاسم البيداغوجي الأصلي
     seen, result = {}, []
     for idx, value in enumerate(headers):
         seen[value] = seen.get(value, 0) + 1
@@ -324,7 +319,6 @@ def make_descriptive_headers(raw, header_idx):
     return result
 
 def read_sheet_safe(file, sheet_name):
-    """قراءة ورقة Excel مع اكتشاف صف العناوين الحقيقي وإظهار أسماء مفهومة للأعمدة."""
     try:
         file.seek(0)
         raw = pd.read_excel(file, sheet_name=sheet_name, header=None, dtype=object)
@@ -334,7 +328,6 @@ def read_sheet_safe(file, sheet_name):
 
     header_idx = None
     best_score = -1
-    # نبحث في أول 25 صفاً عن الصف الأكثر شبهاً بعناوين بيانات التلاميذ
     header_tokens = ['matricule', 'nom', 'prenom', 'لقب', 'الاسم', 'اسم', 'رقم التعريف']
     for i, row in raw.head(25).iterrows():
         cells = [normalize_arabic(str(v)).lower() for v in row.dropna().tolist()]
@@ -352,7 +345,6 @@ def read_sheet_safe(file, sheet_name):
     df.columns = clean_headers
     df = df.dropna(how='all').reset_index(drop=True)
 
-    # إزالة صفوف الأكواد أو العناوين المكررة داخل البيانات
     name_col = process_names(df)
     if name_col is not None:
         key = df[name_col].astype(str).str.strip().str.lower()
@@ -377,54 +369,152 @@ def classify_student(avg):
     if avg >= 3.5: return "ضعيف ⚠️"
     return "ضعيف جداً ❌"
 
-def get_available_mistral_model(api_key):
-    """اختيار نموذج مدعوم فعلياً من الحساب بدلاً من الاعتماد على اسم قديم ثابت."""
-    preferred_models = [
-        'mistral-small-2603', 'mistral-small-latest',
-        'mistral-medium-latest', 'mistral-large-latest'
-    ]
-    try:
-        response = requests.get(
-            'https://api.mistral.ai/v1/models',
-            headers={'Authorization': f'Bearer {api_key}'}, timeout=20
-        )
-        if response.status_code == 200:
-            payload = response.json()
-            models = payload.get('data', payload if isinstance(payload, list) else [])
-            available = {m.get('id') for m in models if isinstance(m, dict)}
-            for model in preferred_models:
-                if model in available:
-                    return model
-    except Exception:
-        pass
-    # النموذج الحديث الافتراضي، مع إبقاء alias كخيار احتياطي للتوافق.
-    return 'mistral-small-2603'
-
-def call_mistral_api(api_key, prompt):
-    url = 'https://api.mistral.ai/v1/chat/completions'
-    model = get_available_mistral_model(api_key)
-    headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'}
-    data = {
-        'model': model,
-        'messages': [
-            {'role': 'system', 'content': 'أنت خبير تحليل بيانات تربوية جزائري. حلل الأرقام بدقة ولا تخترع بيانات غير موجودة.'},
-            {'role': 'user', 'content': prompt}
+# ══════════════════════════════════════════════════════════════
+# دوال الذكاء الاصطناعي (Mistral و OpenRouter والتحليل المحلي)
+# ══════════════════════════════════════════════════════════════
+def call_mistral_api(api_key, prompt, model="mistral-small-latest"):
+    """ الاتصال بـ Mistral AI """
+    if not api_key:
+        return {
+            "success": False,
+            "provider": "Mistral",
+            "error": "مفتاح Mistral غير موجود"
+        }
+    url = "https://api.mistral.ai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "أنت خبير تربوي جزائري متخصص في تحليل "
+                    "نتائج تلاميذ التعليم الابتدائي. "
+                    "أجب باللغة العربية الواضحة."
+                )
+            },
+            {"role": "user", "content": prompt}
         ],
-        'temperature': 0.35,
-        'max_tokens': 1800
+        "temperature": 0.4,
+        "max_tokens": 2000
     }
     try:
-        response = requests.post(url, headers=headers, json=data, timeout=90)
+        response = requests.post(url, headers=headers, json=payload, timeout=90)
         if response.status_code == 200:
-            content = response.json()['choices'][0]['message'].get('content', '')
-            if isinstance(content, list):
-                content = ''.join(part.get('text', '') for part in content if isinstance(part, dict))
-            return content, model
-        return f'❌ خطأ {response.status_code}: {response.text}', model
+            data = response.json()
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            return {
+                "success": True,
+                "provider": "Mistral",
+                "model": model,
+                "content": content
+            }
+        return {
+            "success": False,
+            "provider": "Mistral",
+            "status_code": response.status_code,
+            "error": response.text
+        }
     except Exception as e:
-        return f'❌ خطأ في الاتصال: {e}', model
+        return {
+            "success": False,
+            "provider": "Mistral",
+            "error": str(e)
+        }
 
+def call_openrouter_api(api_key, prompt, model="openrouter/auto"):
+    """ الاتصال بـ OpenRouter """
+    if not api_key:
+        return {
+            "success": False,
+            "provider": "OpenRouter",
+            "error": "مفتاح OpenRouter غير موجود"
+        }
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "X-Title": "نظام حساب معدلات التلاميذ"
+    }
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "أنت خبير تربوي جزائري متخصص في "
+                    "تحليل نتائج التعليم الابتدائي. "
+                    "اكتب باللغة العربية الواضحة."
+                )
+            },
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.4,
+        "max_tokens": 2000
+    }
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=90)
+        if response.status_code == 200:
+            data = response.json()
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            return {
+                "success": True,
+                "provider": "OpenRouter",
+                "model": model,
+                "content": content
+            }
+        return {
+            "success": False,
+            "provider": "OpenRouter",
+            "status_code": response.status_code,
+            "error": response.text
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "provider": "OpenRouter",
+            "error": str(e)
+        }
 
+def analyze_with_ai(prompt, provider, model, mistral_key=None, openrouter_key=None):
+    """ بوابة موحدة لجميع مزودي الذكاء الاصطناعي """
+    if provider == "Mistral":
+        return call_mistral_api(api_key=mistral_key, prompt=prompt, model=model)
+    elif provider == "OpenRouter":
+        return call_openrouter_api(api_key=openrouter_key, prompt=prompt, model=model)
+    return {
+        "success": False,
+        "provider": provider,
+        "error": "مزود غير معروف"
+    }
+
+def auto_ai_analysis(prompt, mistral_key=None, openrouter_key=None):
+    """ نظام التحليل التلقائي: ينتقل للمزود التالي عند الفشل """
+    errors = []
+    
+    # المحاولة الأولى: OpenRouter
+    if openrouter_key:
+        result = call_openrouter_api(api_key=openrouter_key, prompt=prompt, model="openrouter/auto")
+        if result["success"]:
+            return result
+        errors.append(f"OpenRouter: {result.get('error')}")
+        
+    # المحاولة الثانية: Mistral
+    if mistral_key:
+        result = call_mistral_api(api_key=mistral_key, prompt=prompt, model="mistral-small-latest")
+        if result["success"]:
+            return result
+        errors.append(f"Mistral: {result.get('error')}")
+        
+    # فشل جميع الخدمات
+    return {
+        "success": False,
+        "provider": "Local",
+        "error": "\n".join(errors)
+    }
 
 def generate_local_pedagogical_report(selected_level, final_df, subject_cols):
     """تقرير بيداغوجي محلي يعمل بدون إنترنت أو API."""
@@ -482,16 +572,10 @@ def generate_local_pedagogical_report(selected_level, final_df, subject_cols):
     ]
     return '\n'.join(lines)
 
-def is_mistral_error_response(text):
-    text = str(text).lower()
-    return text.startswith('❌ خطأ') or 'rate limit exceeded' in text or '"object":"error"' in text or '"object": "error"' in text
-
 def generate_arabic_pdf(text, font_path="arial.ttf"):
-    """ دالة لتوليد ملف PDF داعم للغة العربية مع حل مشكلة ترتيب الجمل """
     import os
     import urllib.request
 
-    # محاولة تحميل الخط تلقائياً إذا لم يكن موجوداً
     if not os.path.exists(font_path):
         try:
             font_url = "https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf"
@@ -509,7 +593,6 @@ def generate_arabic_pdf(text, font_path="arial.ttf"):
         import arabic_reshaper
         from bidi.algorithm import get_display
 
-        # تسجيل الخط
         pdfmetrics.registerFont(TTFont('ArabicFont', font_path))
         
         buffer = io.BytesIO()
@@ -522,36 +605,25 @@ def generate_arabic_pdf(text, font_path="arial.ttf"):
             fontName='ArabicFont',
             fontSize=12,
             leading=18,
-            alignment=2,  # محاذاة لليمين
+            alignment=2,
         )
         
         story = []
         
-        # تقسيم النص إلى فقرات (حسب الأسطر الفارغة)
         paragraphs = text.split('\n')
         for para in paragraphs:
             if para.strip() == '':
-                # إضافة مسافة بين الفقرات
                 story.append(Spacer(1, 10))
                 continue
             
-            # تقطيع الفقرة إلى أسطر لا تتجاوز 75 حرفاً (تجنب التقطيع الخاطئ من Reportlab)
             wrapped_lines = textwrap.wrap(para, width=75)
-            
             for line in wrapped_lines:
-                # إعادة تشكيل الحروف العربية
                 reshaped = arabic_reshaper.reshape(line)
-                # تطبيق خوارزمية bidi لتصحيح اتجاه النص
                 bidi_text = get_display(reshaped)
-                
-                # إنشاء فقرة PDF من السطر المعالج
                 p = Paragraph(bidi_text, arabic_style)
                 story.append(p)
-            
-            # مسافة بسيطة بعد نهاية الفقرة
             story.append(Spacer(1, 6))
         
-        # بناء المستند
         doc.build(story)
         buffer.seek(0)
         return buffer.getvalue()
@@ -734,7 +806,7 @@ for (teacher, subject_name), mapping in subject_mappings.items():
         'الورقة': mapping['sheet'],
         'أعمدة التقييم': ' | '.join(map(str, mapping.get('quiz_cols', []))) or '—',
         'النقطة النهائية': mapping.get('test_col') or '⚠️ غير محددة',
-        'الثقة': f"{mapping.get('confidence', 0)}%"
+        'الث الثقة': f"{mapping.get('confidence', 0)}%"
     })
 auto_df = pd.DataFrame(auto_rows)
 st.dataframe(auto_df, use_container_width=True, hide_index=True)
@@ -814,7 +886,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
             '_key': df['_key'],
             subject_name: final_grade
         })
-        # معالجة التكرارات: نحسب متوسط السجلات المتكررة لنفس التلميذ.
         sg = sg.groupby('_key', as_index=False)[subject_name].mean()
         missing_count = int(sg[subject_name].isna().sum())
         computation_log.append(f"📊 {subject_name}: {len(sg)} تلميذاً، نقاط مفقودة={missing_count}")
@@ -854,7 +925,6 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
     if missing_keys:
         extra_rows = []
         for mk in missing_keys:
-            name_found = mk
             row = {'_key': mk, 'الاسم': mk}
             for subj_name, sg_df in subject_grades.items():
                 match = sg_df[sg_df['_key'] == mk]
@@ -942,7 +1012,6 @@ if st.session_state.final_result is not None:
         export_df.to_excel(writer, index=False, sheet_name="النتائج")
         ws = writer.sheets["النتائج"]
         for i, col in enumerate(display_cols):
-            # تجنب Series.map(len) الذي قد يفشل مع Arrow-backed Series في إصدارات Pandas الحديثة.
             values = export_df[col].fillna('').astype(str).tolist()
             max_value_len = max((len(value) for value in values), default=0)
             max_len = max(max_value_len, len(str(col))) + 2
@@ -956,18 +1025,29 @@ if st.session_state.final_result is not None:
     )
 
     # ══════════════════════════════════════════════════════════
-    # الخطوة 5: التحليل البيداغوجي الهجين (Mistral + تحليل محلي)
+    # الخطوة 5: التحليل البيداغوجي الهجين
     # ══════════════════════════════════════════════════════════
     st.markdown("---")
-    st.subheader("🧠 الخطوة 5: التحليل البيداغوجي الذكي")
-    st.caption("يعمل التقرير دائماً: يستخدم Mistral عند توفره، وينتقل تلقائياً إلى التحليل المحلي عند تعذر الخدمة أو ظهور الخطأ 429.")
-
-    analysis_mode = st.radio(
-        "طريقة إنشاء التقرير:",
-        ["⚡ تلقائي (Mistral ثم محلي)", "🏠 تحليل محلي بدون إنترنت", "🤖 Mistral فقط"],
-        horizontal=True,
-        key="analysis_mode"
-    )
+    st.subheader("🤖 إعدادات الذكاء الاصطناعي و إنشاء التقرير")
+    
+    available_providers = ["🏠 التحليل المحلي"]
+    if MISTRAL_API_KEY or OPENROUTER_API_KEY:
+        available_providers.insert(0, "⚡ تلقائي (OpenRouter ثم Mistral ثم محلي)")
+    if MISTRAL_API_KEY:
+        available_providers.append("🤖 Mistral AI")
+    if OPENROUTER_API_KEY:
+        available_providers.append("🌐 OpenRouter")
+        
+    ai_provider = st.selectbox("اختر طريقة التحليل:", available_providers)
+    
+    selected_openrouter_model = "openrouter/auto"
+    if ai_provider == "🌐 OpenRouter":
+        openrouter_models = [
+            "openrouter/auto",
+            "meta-llama/llama-3.3-70b-instruct",
+            "google/gemini-2.5-flash",
+        ]
+        selected_openrouter_model = st.selectbox("🤖 اختر النموذج:", openrouter_models)
 
     if st.button("✨ توليد التقرير التحليلي", type="secondary", use_container_width=True):
         with st.spinner("🧠 جاري تحليل النتائج..."):
@@ -976,12 +1056,11 @@ if st.session_state.final_result is not None:
             pass_r = round((final_df['المعدل الفصلي'] >= 5).mean() * 100, 1)
             grades_dist = final_df['التقدير'].value_counts().to_dict()
             local_report = generate_local_pedagogical_report(selected_level, final_df, subject_cols)
+            
             report = None
             report_source = None
-            used_mistral_model = None
-
-            if analysis_mode != "🏠 تحليل محلي بدون إنترنت" and mistral_api_key:
-                prompt = f"""حلل نتائج قسم ابتدائي جزائري باللغة العربية. اعتمد حصراً على البيانات التالية ولا تخترع أرقاماً أو أسماء:
+            
+            prompt = f"""حلل نتائج قسم ابتدائي جزائري باللغة العربية. اعتمد حصراً على البيانات التالية ولا تخترع أرقاماً أو أسماء:
 المستوى: {selected_level}
 عدد التلاميذ: {len(final_df)}
 المعدل العام: {class_avg}/10
@@ -989,22 +1068,36 @@ if st.session_state.final_result is not None:
 معدلات المواد: {json.dumps(subject_avgs, ensure_ascii=False)}
 توزيع التقديرات: {json.dumps(grades_dist, ensure_ascii=False)}
 المطلوب: قراءة عامة، نقاط القوة، نقاط الضعف، ثم 3 توصيات بيداغوجية عملية. اكتب نصاً عربياً واضحاً دون Markdown."""
-                ai_response, used_mistral_model = call_mistral_api(mistral_api_key, prompt)
-                if not is_mistral_error_response(ai_response):
-                    report = str(ai_response)
-                    report_source = f"🤖 تم إنشاء التقرير بواسطة Mistral ({used_mistral_model})"
-                elif analysis_mode == "🤖 Mistral فقط":
-                    st.error(f"تعذر إنشاء التقرير عبر Mistral. التفاصيل: {ai_response}")
 
-            elif analysis_mode == "🤖 Mistral فقط":
-                st.error("لا يوجد مفتاح Mistral API في إعدادات التطبيق.")
-
-            if report is None and analysis_mode != "🤖 Mistral فقط":
-                report = local_report
-                if mistral_api_key and analysis_mode == "⚡ تلقائي (Mistral ثم محلي)":
-                    report_source = "🏠 تم الانتقال تلقائياً إلى التحليل المحلي بسبب عدم توفر Mistral أو وجود حد استخدام."
+            if ai_provider == "⚡ تلقائي (OpenRouter ثم Mistral ثم محلي)":
+                result = auto_ai_analysis(prompt, MISTRAL_API_KEY, OPENROUTER_API_KEY)
+                if result["success"]:
+                    report = result["content"]
+                    report_source = f"🤖 تم إنشاء التقرير بواسطة {result['provider']} ({result.get('model', 'auto')})"
                 else:
-                    report_source = "🏠 تم إنشاء التقرير بالتحليل المحلي دون الحاجة إلى API."
+                    st.warning(f"فشلت خدمات الذكاء الاصطناعي. جاري استخدام التحليل المحلي.\nالأخطاء:\n{result.get('error')}")
+                    report = local_report
+                    report_source = "🏠 تم إنشاء التقرير بالتحليل المحلي (احتياطي)."
+                    
+            elif ai_provider == "🤖 Mistral AI":
+                result = analyze_with_ai(prompt, "Mistral", "mistral-small-latest", mistral_key=MISTRAL_API_KEY)
+                if result["success"]:
+                    report = result["content"]
+                    report_source = "🤖 تم إنشاء التقرير بواسطة Mistral AI"
+                else:
+                    st.error(f"خطأ في الاتصال بـ Mistral: {result.get('error')}")
+                    
+            elif ai_provider == "🌐 OpenRouter":
+                result = analyze_with_ai(prompt, "OpenRouter", selected_openrouter_model, openrouter_key=OPENROUTER_API_KEY)
+                if result["success"]:
+                    report = result["content"]
+                    report_source = f"🤖 تم إنشاء التقرير بواسطة OpenRouter ({selected_openrouter_model})"
+                else:
+                    st.error(f"خطأ في الاتصال بـ OpenRouter: {result.get('error')}")
+                    
+            elif ai_provider == "🏠 التحليل المحلي":
+                report = local_report
+                report_source = "🏠 تم إنشاء التقرير بالتحليل المحلي دون الحاجة إلى API."
 
             if report:
                 st.success(report_source)
@@ -1017,4 +1110,3 @@ if st.session_state.final_result is not None:
                         file_name=f"تقرير_تحليلي_{selected_level}_{datetime.now().strftime('%Y%m%d')}.pdf",
                         mime="application/pdf", use_container_width=True
                     )
-
