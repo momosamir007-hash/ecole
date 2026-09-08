@@ -437,7 +437,7 @@ def call_openrouter_api(api_key, prompt, model="openrouter/auto"):
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "X-Title": "نظام حساب معدلات التلاميذ"
+        "X-Title": "Primary School Grading System"
     }
     payload = {
         "model": model,
