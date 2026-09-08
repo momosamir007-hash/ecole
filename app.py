@@ -221,8 +221,20 @@ def clean_grade_value(val):
             return np.nan
     return np.nan
 
+def is_final_assessment_column(column_name):
+    """التعرف على أسماء النقطة النهائية في مستخرجات الرقمنة المختلفة."""
+    c = normalize_arabic(str(column_name)).lower()
+    aliases = [
+        'اختبار', 'امتحان', 'تقويم مستمر', 'معدل التقويم المستمر',
+        'المعدل التقويمي', 'معدل التقويم', 'النقطة النهائية',
+        'التقييم النهائي', 'تقويم نهائي'
+    ]
+    return any(normalize_arabic(alias) in c for alias in aliases)
+
+
 def get_gradeable_columns(df, name_col=None):
-    ignore_patterns = ['رقم', 'matricule', 'تاريخ', 'date', 'لقب', 'اسم', 'nom', 'prenom', 'obs', 'ملاحظ', 'قرار', 'ترتيب', 'معدل', 'مجموع', 'عدد']
+    # لا نستبعد كلمة «معدل» إذا كانت جزءاً من اسم النقطة النهائية مثل «معدل التقويم المستمر».
+    ignore_patterns = ['رقم', 'matricule', 'تاريخ', 'date', 'لقب', 'اسم', 'nom', 'prenom', 'obs', 'ملاحظ', 'قرار', 'ترتيب', 'مجموع', 'عدد']
     result = []
     for col in df.columns:
         if col == name_col:
@@ -230,23 +242,39 @@ def get_gradeable_columns(df, name_col=None):
         col_norm = normalize_arabic(str(col)).lower()
         if any(ign in col_norm for ign in ignore_patterns):
             continue
+        if 'معدل' in col_norm and not is_final_assessment_column(col):
+            continue
         cleaned = df[col].apply(clean_grade_value)
         valid_count = cleaned.notna().sum()
         if valid_count >= max(1, len(df) * 0.1):
             result.append(col)
     return result
 
+
 def detect_subject_columns(df, subject_keywords, gradeable_cols):
     quiz_cols = []
-    test_col = None
+    test_candidates = []
     for col in gradeable_cols:
         col_norm = normalize_arabic(str(col))
+        # أعط أولوية صريحة للأسماء الشائعة للنقطة النهائية.
+        if is_final_assessment_column(col):
+            test_candidates.append(col)
+            continue
         is_test = any(normalize_arabic(kw) in col_norm for kw in subject_keywords.get('tests', []))
         is_quiz = any(normalize_arabic(kw) in col_norm for kw in subject_keywords.get('quizzes', []))
-        if is_quiz:
+        if is_test:
+            test_candidates.append(col)
+        elif is_quiz:
             quiz_cols.append(col)
-        elif is_test and test_col is None:
-            test_col = col
+    # إذا كان هناك أكثر من مرشح، نفضل «معدل التقويم المستمر» ثم «اختبار».
+    def priority(col):
+        c = normalize_arabic(str(col))
+        if 'معدل التقويم المستمر' in c: return 0
+        if 'النقطه النهائيه' in c: return 1
+        if 'اختبار' in c or 'امتحان' in c: return 2
+        if 'تقويم' in c: return 3
+        return 9
+    test_col = sorted(test_candidates, key=priority)[0] if test_candidates else None
     return quiz_cols, test_col
 
 def make_descriptive_headers(raw, header_idx):
@@ -799,9 +827,10 @@ if st.session_state.final_result is not None:
         export_df.to_excel(writer, index=False, sheet_name="النتائج")
         ws = writer.sheets["النتائج"]
         for i, col in enumerate(display_cols):
-            max_len = max(
-                export_df[col].astype(str).map(len).max(), len(str(col))
-            ) + 2
+            # تجنب Series.map(len) الذي قد يفشل مع Arrow-backed Series في إصدارات Pandas الحديثة.
+            values = export_df[col].fillna('').astype(str).tolist()
+            max_value_len = max((len(value) for value in values), default=0)
+            max_len = max(max_value_len, len(str(col))) + 2
             ws.set_column(i, i, min(max_len, 35))
             
     st.download_button(
