@@ -277,6 +277,27 @@ def detect_subject_columns(df, subject_keywords, gradeable_cols):
     test_col = sorted(test_candidates, key=priority)[0] if test_candidates else None
     return quiz_cols, test_col
 
+def mapping_confidence(subject, quiz_cols, test_col, gradeable_cols):
+    """درجة ثقة بسيطة وشفافة للاكتشاف التلقائي."""
+    score = 0
+    reasons = []
+    if test_col:
+        score += 55
+        reasons.append(f"تم العثور على النقطة النهائية: {test_col}")
+    else:
+        reasons.append("لم يتم التعرف على النقطة النهائية تلقائياً")
+    if subject['type'] == 'main':
+        if quiz_cols:
+            score += min(35, 10 * len(quiz_cols))
+            reasons.append(f"تم العثور على {len(quiz_cols)} أعمدة تقييم مستمر")
+        elif gradeable_cols:
+            score += 10
+            reasons.append("تم العثور على أعمدة نقاط لكن دون تطابق قوي مع المهارات")
+    else:
+        score += 25 if test_col else 0
+    score += 10 if gradeable_cols else 0
+    return min(score, 100), reasons
+
 def make_descriptive_headers(raw, header_idx):
     """إنشاء أسماء أعمدة مفهومة، خصوصاً عندما تكون عناوين Excel أرقاماً فقط."""
     current = raw.iloc[header_idx].fillna('').astype(str).tolist()
@@ -403,6 +424,68 @@ def call_mistral_api(api_key, prompt):
     except Exception as e:
         return f'❌ خطأ في الاتصال: {e}', model
 
+
+
+def generate_local_pedagogical_report(selected_level, final_df, subject_cols):
+    """تقرير بيداغوجي محلي يعمل بدون إنترنت أو API."""
+    valid_avgs = final_df['المعدل الفصلي'].dropna()
+    class_avg = float(valid_avgs.mean()) if not valid_avgs.empty else 0.0
+    pass_rate = float((final_df['المعدل الفصلي'] >= 5).mean() * 100) if len(final_df) else 0.0
+    student_count = len(final_df)
+    needs_support = int((final_df['المعدل الفصلي'] < 5).sum())
+    very_low = int((final_df['المعدل الفصلي'] < 3.5).sum())
+    subject_avgs = final_df[subject_cols].mean().dropna().sort_values(ascending=False)
+    strongest = subject_avgs.head(3)
+    weakest = subject_avgs.tail(min(3, len(subject_avgs))).sort_values()
+
+    if class_avg >= 9:
+        overall = 'ممتاز، ويعكس تحكماً جيداً في أغلب التعلمات الأساسية.'
+    elif class_avg >= 8:
+        overall = 'جيد جداً، مع وجود فرصة لتعزيز بعض جوانب التعلم.'
+    elif class_avg >= 7:
+        overall = 'جيد بصفة عامة، مع الحاجة إلى متابعة الفوارق الفردية.'
+    elif class_avg >= 5:
+        overall = 'مقبول، لكنه يحتاج إلى تدخلات بيداغوجية مركزة لرفع الأداء.'
+    else:
+        overall = 'دون المستوى المأمول ويحتاج إلى خطة دعم ومتابعة منتظمة.'
+
+    lines = [
+        f'التقرير البيداغوجي المحلي — {selected_level}',
+        '',
+        '1. القراءة العامة للنتائج',
+        f'بلغ عدد التلاميذ {student_count}، بينما بلغ المعدل العام للقسم {class_avg:.2f} من 10، ونسبة النجاح {pass_rate:.1f}%. المستوى العام {overall}',
+        '',
+        '2. نقاط القوة',
+    ]
+    if len(strongest):
+        for name, value in strongest.items():
+            lines.append(f'- {name}: متوسط {value:.2f}/10.')
+    else:
+        lines.append('- لا توجد بيانات كافية لاستخراج نقاط القوة حسب المواد.')
+
+    lines += ['', '3. جوانب تحتاج إلى تحسين']
+    if len(weakest):
+        for name, value in weakest.items():
+            lines.append(f'- {name}: متوسط {value:.2f}/10، ويستحسن إعطاء هذه المادة أولوية في الدعم.')
+    else:
+        lines.append('- لا توجد بيانات كافية لاستخراج المواد التي تحتاج إلى دعم.')
+
+    lines += [
+        '', '4. متابعة التلاميذ',
+        f'- عدد التلاميذ الذين تقل معدلاتهم عن 5/10: {needs_support}.',
+        f'- عدد التلاميذ الذين تقل معدلاتهم عن 3.5/10: {very_low}.',
+        '', '5. توصيات بيداغوجية عملية',
+        '- إعداد مجموعات دعم صغيرة حسب الصعوبات المشتركة، مع أنشطة قصيرة ومحددة الأهداف.',
+        '- تخصيص تقويمات تشخيصية في المواد ذات المتوسطات الأضعف لتحديد المهارات التي تحتاج إلى معالجة.',
+        '- متابعة التلاميذ الأكثر حاجة إلى الدعم فردياً وتسجيل تطور نتائجهم في التقويمات اللاحقة.',
+        '', 'ملاحظة: هذا التقرير تم إنشاؤه محلياً اعتماداً على الأرقام الفعلية للنتائج، دون استخدام خدمة ذكاء اصطناعي خارجية.'
+    ]
+    return '\n'.join(lines)
+
+def is_mistral_error_response(text):
+    text = str(text).lower()
+    return text.startswith('❌ خطأ') or 'rate limit exceeded' in text or '"object":"error"' in text or '"object": "error"' in text
+
 def generate_arabic_pdf(text, font_path="arial.ttf"):
     """ دالة لتوليد ملف PDF داعم للغة العربية مع حل مشكلة ترتيب الجمل """
     import os
@@ -483,7 +566,7 @@ def generate_arabic_pdf(text, font_path="arial.ttf"):
 # ══════════════════════════════════════════════════════════════
 # التطبيق الرئيسي (حالة الجلسة والواجهة)
 # ══════════════════════════════════════════════════════════════
-for key, default in [('subject_mappings', {}), ('final_result', None), ('selected_level', list(LEVELS.keys())[0]), ('subject_cols', [])]:
+for key, default in [('subject_mappings', {}), ('final_result', None), ('selected_level', list(LEVELS.keys())[0]), ('subject_cols', []), ('validation_report', None), ('auto_mapping_summary', [])]:
     if key not in st.session_state:
         st.session_state[key] = default
 
@@ -586,7 +669,18 @@ for teacher, subjects in subjects_by_teacher.items():
         quiz_cols_detected, test_col_detected = detect_subject_columns(
             df_sheet, subject['keywords'], gradeable_cols
         )
-        
+        confidence, detection_reasons = mapping_confidence(subject, quiz_cols_detected, test_col_detected, gradeable_cols)
+        if confidence >= 80:
+            st.success(f"🤖 التعرف التلقائي: ثقة {confidence}%")
+        elif confidence >= 50:
+            st.warning(f"🤖 التعرف التلقائي: ثقة متوسطة {confidence}% — راجع الاختيارات")
+        else:
+            st.error(f"🤖 التعرف التلقائي: ثقة منخفضة {confidence}% — يلزم التحقق اليدوي")
+        with st.expander("🧠 تفاصيل الاكتشاف التلقائي"):
+            for reason in detection_reasons:
+                st.write("• " + reason)
+            st.write("الأعمدة الرقمية المكتشفة:", len(gradeable_cols))
+
         col1, col2 = st.columns(2)
         with col1:
             if subject['type'] == 'main' and subject['keywords'].get('quizzes'):
@@ -621,7 +715,9 @@ for teacher, subjects in subjects_by_teacher.items():
             'sheet': selected_sheet,
             'quiz_cols': selected_quizzes,
             'test_col': selected_test,
-            'type': subject['type']
+            'type': subject['type'],
+            'confidence': confidence,
+            'available_grade_columns': gradeable_cols
         }
         
         with st.expander(f"👁️ معاينة «{selected_sheet}»"):
@@ -629,6 +725,22 @@ for teacher, subjects in subjects_by_teacher.items():
         st.markdown("---")
 
 st.session_state.subject_mappings = subject_mappings
+
+st.markdown("### 🤖 ملخص الاكتشاف التلقائي")
+auto_rows = []
+for (teacher, subject_name), mapping in subject_mappings.items():
+    auto_rows.append({
+        'المادة': subject_name,
+        'الورقة': mapping['sheet'],
+        'أعمدة التقييم': ' | '.join(map(str, mapping.get('quiz_cols', []))) or '—',
+        'النقطة النهائية': mapping.get('test_col') or '⚠️ غير محددة',
+        'الثقة': f"{mapping.get('confidence', 0)}%"
+    })
+auto_df = pd.DataFrame(auto_rows)
+st.dataframe(auto_df, use_container_width=True, hide_index=True)
+missing_final = auto_df[auto_df['النقطة النهائية'] == '⚠️ غير محددة'] if not auto_df.empty else pd.DataFrame()
+if not missing_final.empty:
+    st.warning("⚠️ توجد مواد بلا نقطة نهائية محددة. راجعها قبل بدء الحساب.")
 
 st.markdown("---")
 st.subheader("⚙️ الخطوة 4: الدمج وحساب المعدلات")
@@ -701,8 +813,11 @@ if st.button("🚀 بدء الحساب", type="primary", use_container_width=Tru
         sg = pd.DataFrame({
             '_key': df['_key'],
             subject_name: final_grade
-        }).drop_duplicates('_key')
-        
+        })
+        # معالجة التكرارات: نحسب متوسط السجلات المتكررة لنفس التلميذ.
+        sg = sg.groupby('_key', as_index=False)[subject_name].mean()
+        missing_count = int(sg[subject_name].isna().sum())
+        computation_log.append(f"📊 {subject_name}: {len(sg)} تلميذاً، نقاط مفقودة={missing_count}")
         subject_grades[subject_name] = sg
         
     if not subject_grades:
@@ -841,63 +956,65 @@ if st.session_state.final_result is not None:
     )
 
     # ══════════════════════════════════════════════════════════
-    # الخطوة 5: التحليل البيداغوجي بالذكاء الاصطناعي مع تحميل PDF
+    # الخطوة 5: التحليل البيداغوجي الهجين (Mistral + تحليل محلي)
     # ══════════════════════════════════════════════════════════
     st.markdown("---")
-    st.subheader("🧠 الخطوة 5: التحليل البيداغوجي المتقدم")
-    
-    if not mistral_api_key:
-        st.info("💡 للقيام بالتحليل الذكي، يرجى إعداد مفتاح Mistral API في ملف .streamlit/secrets.toml")
-    else:
-        st.write("اضغط على الزر ليقوم الذكاء الاصطناعي بتحليل النتائج وإعطاء توصيات بيداغوجية.")
-        if st.button("✨ توليد التقرير التحليلي", type="secondary"):
-            with st.spinner("🤖 جاري التحليل..."):
-                subject_avgs = (final_df[subject_cols]
-                                .mean().round(2).to_dict())
-                class_avg = round(final_df['المعدل الفصلي'].mean(), 2)
-                pass_r = round(
-                    (final_df['المعدل الفصلي'] >= 5).mean() * 100, 1
-                )
-                grades_dist = (final_df['التقدير']
-                               .value_counts().to_dict())
-                               
-                prompt = f"""بناءً على الإحصائيات التالية لنتائج الفصل الدراسي، قم بتقديم تقرير مفصل:
-                
-                **البيانات:**
-                - المستوى: {selected_level}
-                - عدد التلاميذ: {len(final_df)}
-                - المعدل العام للقسم: {class_avg} / 10
-                - نسبة النجاح (المعدل 5 فما فوق): {pass_r}%
-                
-                معدلات المواد (من 10):
-                {json.dumps(subject_avgs, ensure_ascii=False, indent=2)}
-                
-                توزيع التقديرات:
-                {json.dumps(grades_dist, ensure_ascii=False, indent=2)}
-                
-                **المطلوب:**
-                1. قراءة تحليلية عامة لمستوى القسم ونسبة النجاح.
-                2. تحديد نقاط القوة (المواد ذات الأداء العالي).
-                3. تحديد نقاط الضعف (المواد التي تحتاج تدخلاً).
-                4. تقديم 3 توصيات بيداغوجية عملية وواقعية.
-                الرد يجب أن يكون باللغة العربية كنص عادي وواضح (بدون تنسيقات Markdown مثل النجوم المزدوجة) ليتم تحويله إلى PDF بسلاسة."""
-                
+    st.subheader("🧠 الخطوة 5: التحليل البيداغوجي الذكي")
+    st.caption("يعمل التقرير دائماً: يستخدم Mistral عند توفره، وينتقل تلقائياً إلى التحليل المحلي عند تعذر الخدمة أو ظهور الخطأ 429.")
+
+    analysis_mode = st.radio(
+        "طريقة إنشاء التقرير:",
+        ["⚡ تلقائي (Mistral ثم محلي)", "🏠 تحليل محلي بدون إنترنت", "🤖 Mistral فقط"],
+        horizontal=True,
+        key="analysis_mode"
+    )
+
+    if st.button("✨ توليد التقرير التحليلي", type="secondary", use_container_width=True):
+        with st.spinner("🧠 جاري تحليل النتائج..."):
+            subject_avgs = final_df[subject_cols].mean().round(2).to_dict()
+            class_avg = round(final_df['المعدل الفصلي'].mean(), 2)
+            pass_r = round((final_df['المعدل الفصلي'] >= 5).mean() * 100, 1)
+            grades_dist = final_df['التقدير'].value_counts().to_dict()
+            local_report = generate_local_pedagogical_report(selected_level, final_df, subject_cols)
+            report = None
+            report_source = None
+            used_mistral_model = None
+
+            if analysis_mode != "🏠 تحليل محلي بدون إنترنت" and mistral_api_key:
+                prompt = f"""حلل نتائج قسم ابتدائي جزائري باللغة العربية. اعتمد حصراً على البيانات التالية ولا تخترع أرقاماً أو أسماء:
+المستوى: {selected_level}
+عدد التلاميذ: {len(final_df)}
+المعدل العام: {class_avg}/10
+نسبة النجاح: {pass_r}%
+معدلات المواد: {json.dumps(subject_avgs, ensure_ascii=False)}
+توزيع التقديرات: {json.dumps(grades_dist, ensure_ascii=False)}
+المطلوب: قراءة عامة، نقاط القوة، نقاط الضعف، ثم 3 توصيات بيداغوجية عملية. اكتب نصاً عربياً واضحاً دون Markdown."""
                 ai_response, used_mistral_model = call_mistral_api(mistral_api_key, prompt)
-                st.caption(f"🤖 النموذج المستخدم تلقائياً: {used_mistral_model}")
-                
-                safe_response = str(ai_response).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br>')
-                st.markdown(
-                    f'<div class="analysis-box">{safe_response}</div>',
-                    unsafe_allow_html=True
-                )
-                
-                # توليد الـ PDF من النص باستخدام الدالة المعدلة
-                pdf_bytes = generate_arabic_pdf(ai_response, font_path="arial.ttf")
+                if not is_mistral_error_response(ai_response):
+                    report = str(ai_response)
+                    report_source = f"🤖 تم إنشاء التقرير بواسطة Mistral ({used_mistral_model})"
+                elif analysis_mode == "🤖 Mistral فقط":
+                    st.error(f"تعذر إنشاء التقرير عبر Mistral. التفاصيل: {ai_response}")
+
+            elif analysis_mode == "🤖 Mistral فقط":
+                st.error("لا يوجد مفتاح Mistral API في إعدادات التطبيق.")
+
+            if report is None and analysis_mode != "🤖 Mistral فقط":
+                report = local_report
+                if mistral_api_key and analysis_mode == "⚡ تلقائي (Mistral ثم محلي)":
+                    report_source = "🏠 تم الانتقال تلقائياً إلى التحليل المحلي بسبب عدم توفر Mistral أو وجود حد استخدام."
+                else:
+                    report_source = "🏠 تم إنشاء التقرير بالتحليل المحلي دون الحاجة إلى API."
+
+            if report:
+                st.success(report_source)
+                safe_response = str(report).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br>')
+                st.markdown(f'<div class="analysis-box">{safe_response}</div>', unsafe_allow_html=True)
+                pdf_bytes = generate_arabic_pdf(report, font_path="arial.ttf")
                 if pdf_bytes:
                     st.download_button(
-                        label="📥 تحميل التقرير (PDF)",
-                        data=pdf_bytes,
+                        label="📥 تحميل التقرير (PDF)", data=pdf_bytes,
                         file_name=f"تقرير_تحليلي_{selected_level}_{datetime.now().strftime('%Y%m%d')}.pdf",
-                        mime="application/pdf",
-                        use_container_width=True
+                        mime="application/pdf", use_container_width=True
                     )
+
